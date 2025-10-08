@@ -1,34 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from '../../src/trpc/routers';
 import { db } from '../../src/db';
 import { verifyToken } from '../../src/utils/jwt';
 
-const handler = createHTTPHandler({
-  router: appRouter,
-  createContext: async ({ req }: any) => {
-    const authHeader = req.headers['authorization'] || req.headers.get?.('authorization');
-    let user = null;
-
-    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        user = verifyToken(token);
-      } catch (error) {
-        // Token is invalid or expired
-      }
-    }
-
-    return {
-      db,
-      user,
-      req,
-      res: null,
-    };
-  },
-});
-
-export default async function trpcHandler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -36,39 +12,51 @@ export default async function trpcHandler(req: VercelRequest, res: VercelRespons
 
   // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
-  // Convert VercelRequest to Node.js IncomingMessage-like object
-  const request = {
+  // Convert VercelRequest to Fetch API Request
+  const url = new URL(req.url || '', `http://${req.headers.host}`);
+
+  const fetchRequest = new Request(url.toString(), {
     method: req.method,
-    headers: req.headers,
-    body: req.body,
-    url: req.url,
-  };
+    headers: new Headers(req.headers as Record<string, string>),
+    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+  });
 
-  const response = {
-    statusCode: 200,
-    headers: {} as Record<string, string>,
-    body: '',
-    setHeader(name: string, value: string) {
-      this.headers[name] = value;
-      res.setHeader(name, value);
-    },
-    end(data: string) {
-      this.body = data;
-      res.status(this.statusCode).send(data);
-    },
-    writeHead(code: number, headers?: Record<string, string>) {
-      this.statusCode = code;
-      if (headers) {
-        Object.entries(headers).forEach(([key, val]) => {
-          this.setHeader(key, val);
-        });
+  const response = await fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req: fetchRequest,
+    router: appRouter,
+    createContext: async () => {
+      const authHeader = req.headers.authorization;
+      let user = null;
+
+      if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          user = verifyToken(token);
+        } catch (error) {
+          // Token is invalid or expired
+        }
       }
-    },
-  };
 
-  await handler(request as any, response as any);
+      return {
+        db,
+        user,
+        req: null,
+        res: null,
+      };
+    },
+  });
+
+  // Convert Fetch API Response to VercelResponse
+  const body = await response.text();
+  res.status(response.status);
+
+  response.headers.forEach((value, key) => {
+    res.setHeader(key, value);
+  });
+
+  return res.send(body);
 }
