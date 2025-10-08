@@ -87,7 +87,7 @@ export const userRouter = router({
         name: user.name,
         image: user.image,
         emailVerified: user.emailVerified,
-        roles: user.userRoles.map((ur: any) => ({
+        roles: (user as any).userRoles.map((ur: any) => ({
           id: ur.role.id,
           name: ur.role.name,
           label: ur.role.label,
@@ -123,7 +123,7 @@ export const userRouter = router({
       });
 
       return {
-        users: allUsers.map((user) => ({
+        users: allUsers.map((user: any) => ({
           id: user.id,
           email: user.email,
           name: user.name,

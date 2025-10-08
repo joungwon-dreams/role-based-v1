@@ -21,7 +21,7 @@ export const roleRouter = router({
     });
 
     return {
-      roles: allRoles.map((role) => ({
+      roles: allRoles.map((role: any) => ({
         id: role.id,
         name: role.name,
         label: role.label,
@@ -63,7 +63,7 @@ export const roleRouter = router({
         label: role.label,
         description: role.description,
         level: role.level,
-        permissions: role.rolePermissions.map((rp: any) => ({
+        permissions: (role as any).rolePermissions.map((rp: any) => ({
           id: rp.permission.id,
           name: rp.permission.name,
           resource: rp.permission.resource,

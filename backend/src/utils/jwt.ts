@@ -14,9 +14,9 @@ export interface JWTPayload {
  */
 export function generateAccessToken(payload: Omit<JWTPayload, 'type'>): string {
   return jwt.sign(
-    { ...payload, type: 'access' },
-    jwtConfig.secret,
-    { expiresIn: jwtConfig.accessExpiresIn }
+    { ...payload, type: 'access' } as any,
+    jwtConfig.secret as any,
+    { expiresIn: jwtConfig.accessExpiresIn } as any
   );
 }
 
@@ -25,9 +25,9 @@ export function generateAccessToken(payload: Omit<JWTPayload, 'type'>): string {
  */
 export function generateRefreshToken(payload: Omit<JWTPayload, 'type'>): string {
   return jwt.sign(
-    { ...payload, type: 'refresh' },
-    jwtConfig.secret,
-    { expiresIn: jwtConfig.refreshExpiresIn }
+    { ...payload, type: 'refresh' } as any,
+    jwtConfig.secret as any,
+    { expiresIn: jwtConfig.refreshExpiresIn } as any
   );
 }
 
