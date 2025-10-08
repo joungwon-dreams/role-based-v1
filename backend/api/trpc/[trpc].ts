@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
   });
 
-  const response = await fetchRequestHandler({
+  const response: globalThis.Response = await fetchRequestHandler({
     endpoint: '/api/trpc',
     req: fetchRequest,
     router: appRouter,
