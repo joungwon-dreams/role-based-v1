@@ -1,40 +1,74 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import Fastify from 'fastify';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { appRouter } from '../../src/trpc/routers';
 import { db } from '../../src/db';
 import { verifyToken } from '../../src/utils/jwt';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const fastify = Fastify();
+const handler = createHTTPHandler({
+  router: appRouter,
+  createContext: async ({ req }: any) => {
+    const authHeader = req.headers['authorization'] || req.headers.get?.('authorization');
+    let user = null;
 
-  await fastify.register(fastifyTRPCPlugin, {
-    prefix: '/api/trpc',
-    trpcOptions: {
-      router: appRouter,
-      createContext: async ({ req: fastifyReq }: any) => {
-        const authHeader = req.headers.authorization || fastifyReq.headers.authorization;
-        let user = null;
+    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        user = verifyToken(token);
+      } catch (error) {
+        // Token is invalid or expired
+      }
+    }
 
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          const token = authHeader.substring(7);
-          try {
-            user = verifyToken(token);
-          } catch (error) {
-            // Token is invalid or expired
-          }
-        }
+    return {
+      db,
+      user,
+      req,
+      res: null,
+    };
+  },
+});
 
-        return {
-          db,
-          user,
-          req: fastifyReq,
-          res: null,
-        };
-      },
+export default async function trpcHandler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  // Convert VercelRequest to Node.js IncomingMessage-like object
+  const request = {
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+    url: req.url,
+  };
+
+  const response = {
+    statusCode: 200,
+    headers: {} as Record<string, string>,
+    body: '',
+    setHeader(name: string, value: string) {
+      this.headers[name] = value;
+      res.setHeader(name, value);
     },
-  });
+    end(data: string) {
+      this.body = data;
+      res.status(this.statusCode).send(data);
+    },
+    writeHead(code: number, headers?: Record<string, string>) {
+      this.statusCode = code;
+      if (headers) {
+        Object.entries(headers).forEach(([key, val]) => {
+          this.setHeader(key, val);
+        });
+      }
+    },
+  };
 
-  await fastify.ready();
-  fastify.server.emit('request', req, res);
+  await handler(request as any, response as any);
 }
