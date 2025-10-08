@@ -55,7 +55,13 @@ async function seed() {
 
     // 2. Create permissions
     console.log('Creating permissions...');
-    const permissionsData = [
+    const permissionsData: Array<{
+      name: string;
+      resource: string;
+      action: 'create' | 'read' | 'update' | 'delete' | 'list' | 'assign' | 'manage';
+      scope: 'own' | 'team' | 'all';
+      description: string;
+    }> = [
       // User permissions
       { name: 'user:read:own', resource: 'user', action: 'read', scope: 'own', description: 'Read own profile' },
       { name: 'user:update:own', resource: 'user', action: 'update', scope: 'own', description: 'Update own profile' },

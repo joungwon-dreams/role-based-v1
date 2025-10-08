@@ -48,7 +48,7 @@ export async function createServer() {
     trpcOptions: {
       router: appRouter,
       createContext,
-      onError({ path, error }) {
+      onError({ path, error }: { path?: string; error: any }) {
         server.log.error(`Error in tRPC handler on path '${path}':`, error);
       },
     },
