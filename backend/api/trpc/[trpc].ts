@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
   });
 
-  const response: globalThis.Response = await fetchRequestHandler({
+  const response = (await fetchRequestHandler({
     endpoint: '/api/trpc',
     req: fetchRequest,
     router: appRouter,
@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res: null,
       };
     },
-  });
+  })) as Response;
 
   // Convert Fetch API Response to VercelResponse
   const body = await response.text();
