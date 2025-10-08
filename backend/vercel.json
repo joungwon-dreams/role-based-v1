@@ -32,5 +32,15 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/**/*.ts": {
+      "includeFiles": "**"
+    }
+  },
+  "build": {
+    "env": {
+      "VERCEL_DISABLE_TYPESCRIPT_BUILD": "1"
+    }
+  }
 }
