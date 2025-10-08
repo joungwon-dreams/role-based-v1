@@ -1,0 +1,13 @@
+import { pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import { users } from '../core/users';
+
+export const verificationTokens = pgTable('verification_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  type: varchar('type', { length: 50 }).notNull(), // 'email_verification', 'password_reset'
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
