@@ -27,7 +27,7 @@ export const roleRouter = router({
         label: role.label,
         description: role.description,
         level: role.level,
-        permissions: role.rolePermissions.map((rp) => rp.permission.name),
+        permissions: role.rolePermissions.map((rp: any) => rp.permission.name),
         createdAt: role.createdAt,
       })),
     };
@@ -63,7 +63,7 @@ export const roleRouter = router({
         label: role.label,
         description: role.description,
         level: role.level,
-        permissions: role.rolePermissions.map((rp) => ({
+        permissions: role.rolePermissions.map((rp: any) => ({
           id: rp.permission.id,
           name: rp.permission.name,
           resource: rp.permission.resource,
@@ -167,7 +167,7 @@ export const roleRouter = router({
       });
 
       return {
-        roles: userRolesData.map((ur) => ({
+        roles: userRolesData.map((ur: any) => ({
           id: ur.role.id,
           name: ur.role.name,
           label: ur.role.label,

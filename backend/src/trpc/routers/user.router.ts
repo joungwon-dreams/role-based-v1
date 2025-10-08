@@ -87,7 +87,7 @@ export const userRouter = router({
         name: user.name,
         image: user.image,
         emailVerified: user.emailVerified,
-        roles: user.userRoles.map((ur) => ({
+        roles: user.userRoles.map((ur: any) => ({
           id: ur.role.id,
           name: ur.role.name,
           label: ur.role.label,
@@ -129,7 +129,7 @@ export const userRouter = router({
           name: user.name,
           image: user.image,
           emailVerified: user.emailVerified,
-          roles: user.userRoles.map((ur) => ur.role.name),
+          roles: user.userRoles.map((ur: any) => ur.role.name),
           createdAt: user.createdAt,
         })),
         total: allUsers.length,

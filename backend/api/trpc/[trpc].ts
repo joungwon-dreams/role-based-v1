@@ -1,39 +1,40 @@
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import Fastify from 'fastify';
 import { appRouter } from '../../src/trpc/routers';
-import { createContext } from '../../src/trpc/context';
+import { db } from '../../src/db';
+import { verifyToken } from '../../src/utils/jwt';
 
-export const config = {
-  runtime: 'edge',
-};
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const fastify = Fastify();
 
-export default async function handler(request: Request) {
-  return fetchRequestHandler({
-    endpoint: '/api/trpc',
-    req: request,
-    router: appRouter,
-    createContext: async () => {
-      // Extract Authorization header
-      const authHeader = request.headers.get('authorization');
-      let user = null;
+  await fastify.register(fastifyTRPCPlugin, {
+    prefix: '/api/trpc',
+    trpcOptions: {
+      router: appRouter,
+      createContext: async ({ req: fastifyReq }: any) => {
+        const authHeader = req.headers.authorization || fastifyReq.headers.authorization;
+        let user = null;
 
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        try {
-          const { verifyToken } = await import('../../src/utils/jwt');
-          user = verifyToken(token);
-        } catch (error) {
-          // Token is invalid or expired
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.substring(7);
+          try {
+            user = verifyToken(token);
+          } catch (error) {
+            // Token is invalid or expired
+          }
         }
-      }
 
-      const { db } = await import('../../src/db');
-
-      return {
-        db,
-        user,
-        req: request,
-        res: null,
-      };
+        return {
+          db,
+          user,
+          req: fastifyReq,
+          res: null,
+        };
+      },
     },
   });
+
+  await fastify.ready();
+  fastify.server.emit('request', req, res);
 }

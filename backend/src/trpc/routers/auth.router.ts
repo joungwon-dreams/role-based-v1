@@ -145,11 +145,11 @@ export const authRouter = router({
         },
       });
 
-      const roleNames = userRolesData.map((ur) => ur.role.name);
+      const roleNames = userRolesData.map((ur: any) => ur.role.name);
       const permissionSet = new Set<string>();
 
-      userRolesData.forEach((ur) => {
-        ur.role.rolePermissions.forEach((rp) => {
+      userRolesData.forEach((ur: any) => {
+        ur.role.rolePermissions.forEach((rp: any) => {
           permissionSet.add(rp.permission.name);
         });
       });
@@ -255,11 +255,11 @@ export const authRouter = router({
           },
         });
 
-        const roleNames = userRolesData.map((ur) => ur.role.name);
+        const roleNames = userRolesData.map((ur: any) => ur.role.name);
         const permissionSet = new Set<string>();
 
-        userRolesData.forEach((ur) => {
-          ur.role.rolePermissions.forEach((rp) => {
+        userRolesData.forEach((ur: any) => {
+          ur.role.rolePermissions.forEach((rp: any) => {
             permissionSet.add(rp.permission.name);
           });
         });
