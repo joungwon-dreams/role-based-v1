@@ -2,6 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "lib": ["ES2022", "DOM"],
+    "moduleResolution": "node",
     "noImplicitAny": false,
     "strict": false,
     "skipLibCheck": true
