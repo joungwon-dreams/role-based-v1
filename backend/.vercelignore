@@ -1,0 +1,11 @@
+node_modules
+.env.local
+.env
+*.log
+test-api.sh
+.DS_Store
+src/index.ts
+src/server.ts
+railway.json
+nixpacks.toml
+.railwayignore
