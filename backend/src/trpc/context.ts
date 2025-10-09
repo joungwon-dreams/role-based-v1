@@ -5,10 +5,14 @@ import { verifyToken, type JWTPayload } from '../utils/jwt';
 export async function createContext({ req, res }: CreateFastifyContextOptions) {
   let user: JWTPayload | null = null;
 
-  // Extract token from Authorization header
+  // Try to extract token from HttpOnly cookie first
+  const cookieToken = req.cookies.accessToken;
+
+  // Fallback to Authorization header for backward compatibility
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
+  const token = cookieToken || (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null);
+
+  if (token) {
     try {
       user = verifyToken(token);
     } catch (error) {
@@ -22,6 +26,7 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
     user,
     req,
     res,
+    headers: req.headers,
   };
 }
 

@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type Context } from './context';
 import superjson from 'superjson';
+import { getActiveSession, getUserAgent } from '../utils/session';
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
@@ -19,15 +20,34 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 /**
- * Protected procedure - requires authentication
+ * Protected procedure - requires authentication and validates session hijacking
  */
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'You must be logged in to access this resource',
     });
   }
+
+  // Session Hijacking Prevention: Validate User-Agent
+  const refreshToken = ctx.req.cookies?.refreshToken;
+  if (refreshToken) {
+    const session = await getActiveSession(refreshToken);
+
+    if (session) {
+      const currentUserAgent = getUserAgent(ctx.headers as any);
+
+      // Check if User-Agent matches the session's stored User-Agent
+      if (session.userAgent && currentUserAgent && session.userAgent !== currentUserAgent) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Session hijacking detected: User-Agent mismatch',
+        });
+      }
+    }
+  }
+
   return next({
     ctx: {
       ...ctx,

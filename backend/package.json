@@ -2,7 +2,6 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Fastify + tRPC Backend with RBAC",
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -32,6 +31,7 @@
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
+    "@fastify/csrf-protection": "^7.1.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
     "@neondatabase/serverless": "^1.0.2",

@@ -15,6 +15,10 @@ export const jwtConfig = {
   refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
 } as const;
 
+export const cookieConfig = {
+  secret: process.env.COOKIE_SECRET || process.env.JWT_SECRET || '',
+} as const;
+
 export const oauthConfig = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',

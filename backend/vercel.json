@@ -1,14 +1,6 @@
 {
   "version": 2,
-  "devCommand": "pnpm dev",
-  "installCommand": "pnpm install",
   "framework": null,
-  "rewrites": [
-    {
-      "source": "/api/trpc/:path*",
-      "destination": "/api/trpc/[trpc]"
-    }
-  ],
   "headers": [
     {
       "source": "/api/:path*",
