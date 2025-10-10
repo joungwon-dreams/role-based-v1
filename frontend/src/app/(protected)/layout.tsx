@@ -28,8 +28,12 @@ export default function ProtectedLayout({
     <div className="min-h-screen">
       <Sidebar />
       <Header />
-      <main className="ml-64 pt-16">
-        <div className="p-6">{children}</div>
+      {/* Main content area - margin-left: 260px (sidebar), padding-top: 72px (header) */}
+      <main style={{ marginLeft: '260px', paddingTop: '72px' }}>
+        {/* Body - padding: 24px all sides, gap: 24px */}
+        <div style={{ padding: '24px' }}>
+          {children}
+        </div>
       </main>
     </div>
   );

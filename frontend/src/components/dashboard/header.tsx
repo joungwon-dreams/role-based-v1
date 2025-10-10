@@ -29,8 +29,12 @@ export function Header() {
   };
 
   return (
-    <header className="fixed left-64 right-0 top-0 z-30 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-full items-center justify-between px-6">
+    <header
+      className="fixed right-0 top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      style={{ left: '260px', height: '72px' }}
+    >
+      {/* Nav - padding: 24px L/R, 16px T */}
+      <div className="flex h-full items-center justify-between" style={{ paddingLeft: '24px', paddingRight: '24px', paddingTop: '16px' }}>
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold">Dashboard</h1>
         </div>

@@ -12,7 +12,6 @@ import {
   BarChart3,
   FileText,
 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -28,12 +27,15 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-background">
-      <div className="flex h-16 items-center border-b px-6">
+    <aside className="fixed left-0 top-0 z-40 h-screen border-r bg-background" style={{ width: '260px' }}>
+      {/* Logo - 64px height */}
+      <div className="flex items-center border-b px-6" style={{ height: '64px' }}>
         <GraduationCap className="mr-2 h-6 w-6 text-primary" />
         <span className="text-xl font-bold">Academy</span>
       </div>
-      <nav className="space-y-1 p-4">
+
+      {/* Menu Drawer - padding: 12px L/R, 4px T/B */}
+      <nav className="space-y-1" style={{ padding: '4px 12px' }}>
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
