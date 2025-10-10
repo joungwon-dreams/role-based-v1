@@ -109,6 +109,10 @@ export const userRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      // Get total count
+      const totalCount = await ctx.db.$count(users);
+
+      // Get paginated users
       const allUsers = await ctx.db.query.users.findMany({
         limit: input.limit,
         offset: input.offset,
@@ -131,8 +135,9 @@ export const userRouter = router({
           emailVerified: user.emailVerified,
           roles: user.userRoles.map((ur: any) => ur.role.name),
           createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
         })),
-        total: allUsers.length,
+        total: totalCount,
       };
     }),
 
