@@ -1,21 +1,49 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { setSuperAdminUser } from '@/lib/dev/test-auth'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { setTestUser } from '@/lib/dev/test-auth'
+import { RoleLevel } from '@/types/auth'
 
 /**
- * Dev-Only Page: Auto-login as Super Admin and redirect to dashboard
- * 개발 전용 페이지: 슈퍼 관리자로 자동 로그인 후 대시보드로 리다이렉트
+ * Dev-Only Page: Auto-login as specified role and redirect to dashboard
+ * 개발 전용 페이지: 지정된 역할로 자동 로그인 후 대시보드로 리다이렉트
  *
- * Visit: /dashboard/dev-auth-test
+ * Visit: /dashboard/dev-auth-test?role=user|premium|admin|super_admin
  */
 export default function DevAuthTestPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [roleName, setRoleName] = useState('Super Admin')
 
   useEffect(() => {
-    // Set super admin user
-    setSuperAdminUser()
+    const role = searchParams.get('role') || 'super_admin'
+
+    let roleLevel: RoleLevel
+    let displayName: string
+
+    switch (role) {
+      case 'user':
+        roleLevel = RoleLevel.USER
+        displayName = 'User'
+        break
+      case 'premium':
+        roleLevel = RoleLevel.PREMIUM
+        displayName = 'Premium User'
+        break
+      case 'admin':
+        roleLevel = RoleLevel.ADMIN
+        displayName = 'Admin'
+        break
+      case 'super_admin':
+      default:
+        roleLevel = RoleLevel.SUPER_ADMIN
+        displayName = 'Super Admin'
+        break
+    }
+
+    setRoleName(displayName)
+    setTestUser(roleLevel)
 
     // Redirect to dashboard after a short delay
     const timer = setTimeout(() => {
@@ -23,7 +51,7 @@ export default function DevAuthTestPage() {
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [router])
+  }, [router, searchParams])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-[#25293c]">
@@ -51,11 +79,8 @@ export default function DevAuthTestPage() {
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Setting Super Admin User
+          Setting {roleName} User
         </h1>
-        <p className="text-gray-600 dark:text-[#acabc1]">
-          superadmin@willydreams.com
-        </p>
         <p className="text-sm text-gray-500 dark:text-[#acabc1] mt-4">
           Redirecting to dashboard...
         </p>
