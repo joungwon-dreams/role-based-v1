@@ -1,18 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { Search, Bell, User, Settings, DollarSign, HelpCircle, LogOut, Moon, Sun, Menu as MenuIcon } from "lucide-react"
+import { Search, Bell, User, Settings, DollarSign, HelpCircle, LogOut, Moon, Sun, Menu as MenuIcon, Languages } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { useSidebar } from "@/components/dashboard/sidebar"
+import { useLocale } from "@/lib/i18n"
 
 export function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false)
+  const [isLangOpen, setIsLangOpen] = React.useState(false)
   const [isMobile, setIsMobile] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const { theme, setTheme } = useTheme()
   const { isCollapsed, isHovered, toggleMobileMenu } = useSidebar()
+  const { locale, setLocale } = useLocale()
 
   React.useEffect(() => {
     setMounted(true)
@@ -49,9 +52,52 @@ export function Navbar() {
       {/* Right Section */}
       <div className="flex items-center gap-3 ml-auto">
         {/* Language Selector */}
-        <button className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100">
-          <span className="text-sm font-medium">EN</span>
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setIsLangOpen(!isLangOpen)}
+            className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
+          >
+            <span className="text-sm font-medium text-gray-600 dark:text-[#acabc1]">
+              {locale === 'en' ? 'EN' : 'KR'}
+            </span>
+          </button>
+
+          {/* Language Dropdown */}
+          {isLangOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setIsLangOpen(false)}
+              />
+              <div className="absolute right-0 top-full z-20 mt-2 w-32 rounded-lg border border-gray-200 dark:border-[#44485e] bg-white dark:bg-[#2f3349] shadow-lg">
+                <div className="p-2">
+                  <button
+                    onClick={() => {
+                      setLocale('en')
+                      setIsLangOpen(false)
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors ${
+                      locale === 'en' ? 'bg-gray-100 dark:bg-[#44485e] text-gray-900 dark:text-white font-medium' : 'text-gray-700 dark:text-[#acabc1]'
+                    }`}
+                  >
+                    <span>English</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLocale('kr')
+                      setIsLangOpen(false)
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors ${
+                      locale === 'kr' ? 'bg-gray-100 dark:bg-[#44485e] text-gray-900 dark:text-white font-medium' : 'text-gray-700 dark:text-[#acabc1]'
+                    }`}
+                  >
+                    <span>한국어</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Theme Toggle */}
         {mounted && (

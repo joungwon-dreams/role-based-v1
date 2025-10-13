@@ -1,9 +1,11 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useLocale } from '@/lib/i18n';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useLocale();
 
   return (
     <main className="pt-[5rem]">
@@ -13,9 +15,11 @@ export default function DashboardPage() {
           {/* Full width card */}
           <div className="w-full px-3 mb-6">
             <div className="rounded-lg bg-white dark:bg-[#2f3349] transition-colors p-6" style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Welcome back, {user?.name || user?.email?.split('@')[0]} 👋🏻</h2>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                {t('dashboard.welcome', { name: user?.name || user?.email?.split('@')[0] || 'User' })}
+              </h2>
               <p className="text-gray-600 dark:text-[#acabc1]">
-                Your progress this week is Awesome. let's keep it up and get a lot of points reward!
+                {t('dashboard.progress')}
               </p>
             </div>
           </div>
@@ -23,7 +27,7 @@ export default function DashboardPage() {
           {/* Row 1: 3 cards */}
           <div className="w-full xl:w-1/3 px-3 mb-6">
             <div className="h-[200px] rounded-lg bg-white dark:bg-[#2f3349] transition-colors p-6" style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}>
-              <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-2">Revenue Growth</p>
+              <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-2">{t('dashboard.revenueGrowth')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">$32.5k</p>
               <p className="text-sm text-green-600">+72.80%</p>
             </div>
@@ -31,7 +35,7 @@ export default function DashboardPage() {
 
           <div className="w-full xl:w-1/3 px-3 mb-6">
             <div className="h-[200px] rounded-lg bg-white dark:bg-[#2f3349] transition-colors p-6" style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}>
-              <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-2">Total Students</p>
+              <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-2">{t('dashboard.totalStudents')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">2.4k</p>
               <p className="text-sm text-green-600">+18.5%</p>
             </div>
@@ -39,7 +43,7 @@ export default function DashboardPage() {
 
           <div className="w-full xl:w-1/3 px-3 mb-6">
             <div className="h-[200px] rounded-lg bg-white dark:bg-[#2f3349] transition-colors p-6" style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}>
-              <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-2">Active Courses</p>
+              <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-2">{t('dashboard.activeCourses')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">48</p>
               <p className="text-sm text-green-600">+12.3%</p>
             </div>
@@ -49,13 +53,18 @@ export default function DashboardPage() {
           <div className="w-full md:w-1/2 px-3 mb-6">
             <div className="h-[300px] rounded-lg bg-white dark:bg-[#2f3349] transition-colors" style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}>
               <div className="border-b border-gray-200 dark:border-[#44485e] px-6 py-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Popular Topics</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.popularTopics')}</h3>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-2 gap-3">
-                  {['UI Design', 'UX Design', 'Music', 'Photography'].map((topic) => (
-                    <div key={topic} className="p-3 border border-gray-200 dark:border-[#44485e] rounded-lg hover:bg-gray-50 dark:hover:bg-[#44485e] cursor-pointer transition-colors">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{topic}</p>
+                  {[
+                    { key: 'uiDesign', label: t('dashboard.topics.uiDesign') },
+                    { key: 'uxDesign', label: t('dashboard.topics.uxDesign') },
+                    { key: 'music', label: t('dashboard.topics.music') },
+                    { key: 'photography', label: t('dashboard.topics.photography') }
+                  ].map((topic) => (
+                    <div key={topic.key} className="p-3 border border-gray-200 dark:border-[#44485e] rounded-lg hover:bg-gray-50 dark:hover:bg-[#44485e] cursor-pointer transition-colors">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{topic.label}</p>
                     </div>
                   ))}
                 </div>
@@ -66,7 +75,7 @@ export default function DashboardPage() {
           <div className="w-full md:w-1/2 px-3 mb-6">
             <div className="h-[300px] rounded-lg bg-white dark:bg-[#2f3349] transition-colors" style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}>
               <div className="border-b border-gray-200 dark:border-[#44485e] px-6 py-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Top Instructors</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.topInstructors')}</h3>
               </div>
               <div className="p-6 space-y-4">
                 {[
@@ -78,7 +87,7 @@ export default function DashboardPage() {
                     <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-[#44485e]"></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{instructor.name}</p>
-                      <p className="text-xs text-gray-600 dark:text-[#acabc1]">{instructor.students} Students</p>
+                      <p className="text-xs text-gray-600 dark:text-[#acabc1]">{instructor.students} {t('dashboard.students')}</p>
                     </div>
                   </div>
                 ))}

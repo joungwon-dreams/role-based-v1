@@ -1,0 +1,31 @@
+{
+  "dashboard": {
+    "welcome": "환영합니다, {name}님 👋🏻",
+    "progress": "이번 주 진행 상황이 훌륭합니다. 계속 열심히 하고 많은 포인트 보상을 받으세요!",
+    "revenueGrowth": "수익 증가",
+    "totalStudents": "총 학생 수",
+    "activeCourses": "활성 강좌",
+    "popularTopics": "인기 주제",
+    "topInstructors": "상위 강사",
+    "students": "학생",
+    "topics": {
+      "uiDesign": "UI 디자인",
+      "uxDesign": "UX 디자인",
+      "music": "음악",
+      "photography": "사진"
+    }
+  },
+  "navbar": {
+    "notifications": "알림",
+    "profile": "내 프로필",
+    "settings": "설정",
+    "billing": "결제",
+    "pricing": "가격",
+    "faq": "자주 묻는 질문",
+    "logout": "로그아웃"
+  },
+  "sidebar": {
+    "dashboard": "대시보드",
+    "users": "사용자"
+  }
+}

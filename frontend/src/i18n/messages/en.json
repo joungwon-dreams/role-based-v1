@@ -1,0 +1,31 @@
+{
+  "dashboard": {
+    "welcome": "Welcome back, {name} 👋🏻",
+    "progress": "Your progress this week is Awesome. let's keep it up and get a lot of points reward!",
+    "revenueGrowth": "Revenue Growth",
+    "totalStudents": "Total Students",
+    "activeCourses": "Active Courses",
+    "popularTopics": "Popular Topics",
+    "topInstructors": "Top Instructors",
+    "students": "Students",
+    "topics": {
+      "uiDesign": "UI Design",
+      "uxDesign": "UX Design",
+      "music": "Music",
+      "photography": "Photography"
+    }
+  },
+  "navbar": {
+    "notifications": "Notifications",
+    "profile": "My Profile",
+    "settings": "Settings",
+    "billing": "Billing",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "logout": "Logout"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "users": "Users"
+  }
+}

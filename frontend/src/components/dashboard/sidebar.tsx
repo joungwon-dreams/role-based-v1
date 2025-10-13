@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { useLocale } from "@/lib/i18n"
 
 interface SidebarContextType {
   isCollapsed: boolean
@@ -35,7 +36,7 @@ export function useSidebar() {
 }
 
 interface MenuItem {
-  title: string
+  titleKey: string
   icon?: React.ReactNode
   href?: string
   badge?: { text: string; variant: string }
@@ -44,12 +45,12 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   {
-    title: "Dashboard",
+    titleKey: "sidebar.dashboard",
     icon: <Home className="w-5 h-5" />,
     href: "/dashboard",
   },
   {
-    title: "Users",
+    titleKey: "sidebar.users",
     icon: <Users className="w-5 h-5" />,
     href: "/dashboard/users",
   },
@@ -57,6 +58,7 @@ const menuItems: MenuItem[] = [
 
 function MenuItemComponent({ item, level = 0 }: { item: MenuItem; level?: number }) {
   const { isCollapsed, isHovered } = useSidebar()
+  const { t } = useLocale()
   const isExpanded = isCollapsed ? isHovered : true
 
   return (
@@ -73,7 +75,7 @@ function MenuItemComponent({ item, level = 0 }: { item: MenuItem; level?: number
         <span className={cn(
           "flex-1 transition-opacity duration-300",
           !isExpanded ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
-        )}>{item.title}</span>
+        )}>{t(item.titleKey)}</span>
       </Link>
     </li>
   )
