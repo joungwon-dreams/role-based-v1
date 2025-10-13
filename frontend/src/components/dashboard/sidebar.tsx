@@ -46,6 +46,21 @@ function MenuItemComponent({ item, level = 0 }: MenuItemComponentProps) {
   const [isExpanded, setIsExpanded] = React.useState(false)
   const isExpandedView = isCollapsed ? isHovered : true
 
+  // Section header rendering
+  if (item.sectionHeader) {
+    if (!isExpandedView) return null // Hide section headers when collapsed
+
+    return (
+      <li className="mt-4 first:mt-0">
+        <div className="px-3 py-2">
+          <div className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase tracking-wider">
+            {t(item.titleKey)}
+          </div>
+        </div>
+      </li>
+    )
+  }
+
   const hasChildren = item.children && item.children.length > 0
   const isActive = pathname === item.path
   const isChildActive = hasChildren && item.children?.some(child => pathname === child.path)

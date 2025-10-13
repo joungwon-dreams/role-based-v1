@@ -25,6 +25,12 @@
     "logout": "로그아웃"
   },
   "menu": {
+    "section": {
+      "user": "사용자",
+      "premium": "프리미엄",
+      "admin": "관리자",
+      "superadmin": "슈퍼 관리자"
+    },
     "dashboard": "대시보드",
     "profile": {
       "title": "프로필",

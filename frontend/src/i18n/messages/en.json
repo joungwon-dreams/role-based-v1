@@ -25,6 +25,12 @@
     "logout": "Logout"
   },
   "menu": {
+    "section": {
+      "user": "User",
+      "premium": "Premium",
+      "admin": "Admin",
+      "superadmin": "Super Admin"
+    },
     "dashboard": "Dashboard",
     "profile": {
       "title": "Profile",

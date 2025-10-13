@@ -83,10 +83,18 @@ export interface MenuItem {
     variant: 'default' | 'danger' | 'warning' | 'success';
   };
   separator?: boolean;
+  sectionHeader?: boolean; // Section header for role-based grouping
 }
 
 export const menuItems: MenuItem[] = [
   // ========== USER LEVEL (1) ==========
+  {
+    key: 'user-section',
+    titleKey: 'menu.section.user',
+    icon: User,
+    minRoleLevel: 1,
+    sectionHeader: true,
+  },
   {
     key: 'dashboard',
     titleKey: 'menu.dashboard',
@@ -271,6 +279,13 @@ export const menuItems: MenuItem[] = [
 
   // ========== PREMIUM LEVEL (2) ==========
   {
+    key: 'premium-section',
+    titleKey: 'menu.section.premium',
+    icon: Users2,
+    minRoleLevel: 2,
+    sectionHeader: true,
+  },
+  {
     key: 'teams',
     titleKey: 'menu.teams.title',
     icon: Users2,
@@ -412,6 +427,13 @@ export const menuItems: MenuItem[] = [
   },
 
   // ========== ADMIN LEVEL (3) ==========
+  {
+    key: 'admin-section',
+    titleKey: 'menu.section.admin',
+    icon: ShieldCheck,
+    minRoleLevel: 3,
+    sectionHeader: true,
+  },
   {
     key: 'content',
     titleKey: 'menu.content.title',
@@ -620,6 +642,13 @@ export const menuItems: MenuItem[] = [
   },
 
   // ========== SUPER ADMIN LEVEL (4) ==========
+  {
+    key: 'superadmin-section',
+    titleKey: 'menu.section.superadmin',
+    icon: Shield,
+    minRoleLevel: 4,
+    sectionHeader: true,
+  },
   {
     key: 'system',
     titleKey: 'menu.system.title',
