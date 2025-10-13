@@ -3,7 +3,8 @@
  * 역할 기반 메뉴 테스트를 위한 Mock 사용자 데이터
  */
 
-import type { User, Role, RoleLevel } from '@/types/auth'
+import type { User, Role } from '@/types/auth'
+import { RoleLevel } from '@/types/auth'
 
 // Mock roles
 const mockRoles: Record<RoleLevel, Role> = {

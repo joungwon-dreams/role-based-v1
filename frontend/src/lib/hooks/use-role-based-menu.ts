@@ -7,8 +7,9 @@
  */
 
 import { useMemo } from 'react'
-import { useAuthStore } from '@/store/auth'
+import { useAuth } from '@/hooks/useAuth'
 import { menuItems, filterMenuByRole, type MenuItem } from '@/config/menu.config'
+import { RoleLevel } from '@/types/auth'
 
 /**
  * Hook to get filtered menu items based on current user's role and permissions
@@ -17,7 +18,7 @@ import { menuItems, filterMenuByRole, type MenuItem } from '@/config/menu.config
  * @returns Filtered menu items / 필터링된 메뉴 아이템
  */
 export function useRoleBasedMenu(): MenuItem[] {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
 
   const filteredMenu = useMemo(() => {
     // Guest users (not authenticated) get no dashboard menu
@@ -26,7 +27,17 @@ export function useRoleBasedMenu(): MenuItem[] {
       return []
     }
 
-    const roleLevel = user.role?.level || 0
+    // Map role name to RoleLevel
+    const roleMap: Record<string, RoleLevel> = {
+      'guest': RoleLevel.GUEST,
+      'user': RoleLevel.USER,
+      'premium_user': RoleLevel.PREMIUM,
+      'admin': RoleLevel.ADMIN,
+      'super_admin': RoleLevel.SUPER_ADMIN,
+    }
+
+    const roleName = user.roles?.[0] || 'guest'
+    const roleLevel = roleMap[roleName] || RoleLevel.GUEST
     const permissions = user.permissions || []
 
     return filterMenuByRole(menuItems, roleLevel, permissions)
