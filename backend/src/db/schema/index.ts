@@ -21,11 +21,16 @@ export * from './activity/audit-logs';
 export * from './security/security-whitelist';
 export * from './security/security-blacklist';
 export * from './security/suspicious-logins';
+export * from './security/system-logs';
 
 // Feature tables
 export * from './features/profiles';
 export * from './features/calendar-events';
 export * from './features/posts';
+export * from './features/comments';
+export * from './features/messages';
+export * from './features/connections';
+export * from './features/tasks';
 export * from './features/teams';
 export * from './features/team-members';
 export * from './features/projects';
@@ -37,3 +42,6 @@ export * from './features/i18n-translations';
 export * from './admin/admin-assignments';
 export * from './admin/password-resets';
 export * from './admin/database-operations';
+export * from './admin/landing-pages';
+export * from './admin/media-library';
+export * from './admin/system-settings';

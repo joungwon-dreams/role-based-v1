@@ -24,6 +24,144 @@
     "faq": "자주 묻는 질문",
     "logout": "로그아웃"
   },
+  "menu": {
+    "dashboard": "대시보드",
+    "profile": {
+      "title": "프로필",
+      "myProfile": "내 프로필",
+      "edit": "프로필 수정",
+      "settings": "설정"
+    },
+    "calendar": {
+      "title": "캘린더",
+      "myCalendar": "내 캘린더",
+      "events": "이벤트"
+    },
+    "posts": {
+      "title": "게시물",
+      "myPosts": "내 게시물",
+      "create": "게시물 작성",
+      "drafts": "임시보관함",
+      "published": "발행됨"
+    },
+    "messages": {
+      "title": "메시지",
+      "inbox": "받은편지함",
+      "sent": "보낸편지함",
+      "compose": "작성"
+    },
+    "connections": {
+      "title": "인맥",
+      "myNetwork": "내 네트워크",
+      "findPeople": "사람 찾기",
+      "requests": "요청"
+    },
+    "notifications": "알림",
+    "teams": {
+      "title": "팀",
+      "myTeams": "내 팀",
+      "create": "팀 생성",
+      "settings": "팀 설정"
+    },
+    "teamMembers": {
+      "title": "팀원",
+      "manage": "멤버 관리",
+      "invite": "멤버 초대",
+      "permissions": "역할 및 권한"
+    },
+    "projects": {
+      "title": "프로젝트",
+      "active": "진행 중인 프로젝트",
+      "create": "프로젝트 생성",
+      "myTasks": "내 작업",
+      "calendar": "캘린더 보기"
+    },
+    "analytics": {
+      "title": "분석",
+      "team": "팀 분석",
+      "projects": "프로젝트 보고서"
+    },
+    "support": "우선 지원",
+    "content": {
+      "title": "콘텐츠 관리",
+      "landingPages": "랜딩 페이지",
+      "allPages": "모든 페이지",
+      "createPage": "페이지 생성",
+      "pageBuilder": "페이지 빌더",
+      "postsManagement": "게시물 관리",
+      "allPosts": "모든 게시물",
+      "pendingReview": "검토 대기",
+      "reportedPosts": "신고된 게시물",
+      "mediaLibrary": "미디어 라이브러리"
+    },
+    "users": {
+      "title": "사용자 관리",
+      "allUsers": "모든 사용자",
+      "activeUsers": "활성 사용자",
+      "suspendedUsers": "정지된 사용자",
+      "userRoles": "사용자 역할"
+    },
+    "activities": {
+      "title": "사용자 활동",
+      "recent": "최근 활동",
+      "loginHistory": "로그인 기록",
+      "actionLogs": "작업 로그",
+      "suspicious": "의심스러운 활동"
+    },
+    "reports": {
+      "title": "보고서",
+      "userStats": "사용자 통계",
+      "contentStats": "콘텐츠 통계",
+      "engagement": "참여 보고서",
+      "export": "데이터 내보내기"
+    },
+    "system": {
+      "title": "시스템 설정",
+      "general": "일반 설정",
+      "environment": "환경 변수",
+      "features": "기능 플래그",
+      "email": "이메일 설정",
+      "storage": "스토리지 설정"
+    },
+    "database": {
+      "title": "데이터베이스 관리",
+      "policies": "데이터베이스 정책",
+      "performance": "쿼리 성능",
+      "indexes": "인덱스",
+      "migrations": "마이그레이션",
+      "backups": "백업"
+    },
+    "security": {
+      "title": "보안 및 컴플라이언스",
+      "policies": "보안 정책",
+      "ssl": "SSL/TLS 설정",
+      "rateLimit": "속도 제한",
+      "whitelist": "IP 화이트리스트",
+      "blacklist": "IP 블랙리스트",
+      "firewall": "방화벽 규칙"
+    },
+    "logs": {
+      "title": "감사 및 로그",
+      "audit": "감사 로그",
+      "system": "시스템 로그",
+      "errors": "오류 로그",
+      "access": "접근 로그",
+      "queries": "쿼리 로그"
+    },
+    "automation": {
+      "title": "트리거 및 자동화",
+      "triggers": "데이터베이스 트리거",
+      "jobs": "예약 작업",
+      "webhooks": "웹훅",
+      "emailTriggers": "이메일 트리거"
+    },
+    "rolesPermissions": {
+      "title": "역할 및 권한",
+      "roles": "역할 관리",
+      "permissions": "권한 관리",
+      "accessControl": "접근 제어"
+    }
+  },
   "sidebar": {
     "dashboard": "대시보드",
     "users": "사용자"

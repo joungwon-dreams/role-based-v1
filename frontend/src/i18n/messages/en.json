@@ -24,6 +24,144 @@
     "faq": "FAQ",
     "logout": "Logout"
   },
+  "menu": {
+    "dashboard": "Dashboard",
+    "profile": {
+      "title": "Profile",
+      "myProfile": "My Profile",
+      "edit": "Edit Profile",
+      "settings": "Settings"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "myCalendar": "My Calendar",
+      "events": "Events"
+    },
+    "posts": {
+      "title": "Posts",
+      "myPosts": "My Posts",
+      "create": "Create Post",
+      "drafts": "Drafts",
+      "published": "Published"
+    },
+    "messages": {
+      "title": "Messages",
+      "inbox": "Inbox",
+      "sent": "Sent",
+      "compose": "Compose"
+    },
+    "connections": {
+      "title": "Connections",
+      "myNetwork": "My Network",
+      "findPeople": "Find People",
+      "requests": "Requests"
+    },
+    "notifications": "Notifications",
+    "teams": {
+      "title": "Teams",
+      "myTeams": "My Teams",
+      "create": "Create Team",
+      "settings": "Team Settings"
+    },
+    "teamMembers": {
+      "title": "Team Members",
+      "manage": "Manage Members",
+      "invite": "Invite Members",
+      "permissions": "Roles & Permissions"
+    },
+    "projects": {
+      "title": "Projects",
+      "active": "Active Projects",
+      "create": "Create Project",
+      "myTasks": "My Tasks",
+      "calendar": "Calendar View"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "team": "Team Analytics",
+      "projects": "Project Reports"
+    },
+    "support": "Priority Support",
+    "content": {
+      "title": "Content Management",
+      "landingPages": "Landing Pages",
+      "allPages": "All Pages",
+      "createPage": "Create Page",
+      "pageBuilder": "Page Builder",
+      "postsManagement": "Posts Management",
+      "allPosts": "All Posts",
+      "pendingReview": "Pending Review",
+      "reportedPosts": "Reported Posts",
+      "mediaLibrary": "Media Library"
+    },
+    "users": {
+      "title": "User Management",
+      "allUsers": "All Users",
+      "activeUsers": "Active Users",
+      "suspendedUsers": "Suspended Users",
+      "userRoles": "User Roles"
+    },
+    "activities": {
+      "title": "User Activities",
+      "recent": "Recent Activities",
+      "loginHistory": "Login History",
+      "actionLogs": "Action Logs",
+      "suspicious": "Suspicious Activity"
+    },
+    "reports": {
+      "title": "Reports",
+      "userStats": "User Statistics",
+      "contentStats": "Content Statistics",
+      "engagement": "Engagement Reports",
+      "export": "Export Data"
+    },
+    "system": {
+      "title": "System Settings",
+      "general": "General Settings",
+      "environment": "Environment Variables",
+      "features": "Feature Flags",
+      "email": "Email Configuration",
+      "storage": "Storage Settings"
+    },
+    "database": {
+      "title": "Database Management",
+      "policies": "Database Policies",
+      "performance": "Query Performance",
+      "indexes": "Indexes",
+      "migrations": "Migrations",
+      "backups": "Backups"
+    },
+    "security": {
+      "title": "Security & Compliance",
+      "policies": "Security Policies",
+      "ssl": "SSL/TLS Config",
+      "rateLimit": "Rate Limiting",
+      "whitelist": "IP Whitelist",
+      "blacklist": "IP Blacklist",
+      "firewall": "Firewall Rules"
+    },
+    "logs": {
+      "title": "Audit & Logs",
+      "audit": "Audit Logs",
+      "system": "System Logs",
+      "errors": "Error Logs",
+      "access": "Access Logs",
+      "queries": "Query Logs"
+    },
+    "automation": {
+      "title": "Triggers & Automation",
+      "triggers": "Database Triggers",
+      "jobs": "Scheduled Jobs",
+      "webhooks": "Webhooks",
+      "emailTriggers": "Email Triggers"
+    },
+    "rolesPermissions": {
+      "title": "Roles & Permissions",
+      "roles": "Role Management",
+      "permissions": "Permission Management",
+      "accessControl": "Access Control"
+    }
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "users": "Users"

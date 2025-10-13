@@ -20,6 +20,19 @@ export const permissionActionEnum = pgEnum('permission_action', [
   'list',
   'assign',
   'manage',
+  'view',
+  'edit',
+  'send',
+  'invite',
+  'moderate',
+  'upload',
+  'publish',
+  'export',
+  'suspend',
+  'monitor',
+  'configure',
+  'backup',
+  'restore',
 ]);
 
 // Permission scope enum
