@@ -2,19 +2,18 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
-  Home,
-  Users,
   ChevronDown,
   ChevronRight,
   CircleDot,
   Circle,
-  Menu as MenuIcon,
   X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 import { useLocale } from "@/lib/i18n"
+import { useRoleBasedMenu } from "@/lib/hooks/use-role-based-menu"
+import type { MenuItem } from "@/config/menu.config"
 
 interface SidebarContextType {
   isCollapsed: boolean
@@ -35,48 +34,114 @@ export function useSidebar() {
   return context
 }
 
-interface MenuItem {
-  titleKey: string
-  icon?: React.ReactNode
-  href?: string
-  badge?: { text: string; variant: string }
-  children?: MenuItem[]
+interface MenuItemComponentProps {
+  item: MenuItem
+  level?: number
 }
 
-const menuItems: MenuItem[] = [
-  {
-    titleKey: "sidebar.dashboard",
-    icon: <Home className="w-5 h-5" />,
-    href: "/dashboard",
-  },
-  {
-    titleKey: "sidebar.users",
-    icon: <Users className="w-5 h-5" />,
-    href: "/dashboard/users",
-  },
-]
-
-function MenuItemComponent({ item, level = 0 }: { item: MenuItem; level?: number }) {
+function MenuItemComponent({ item, level = 0 }: MenuItemComponentProps) {
   const { isCollapsed, isHovered } = useSidebar()
   const { t } = useLocale()
-  const isExpanded = isCollapsed ? isHovered : true
+  const pathname = usePathname()
+  const [isExpanded, setIsExpanded] = React.useState(false)
+  const isExpandedView = isCollapsed ? isHovered : true
+
+  const hasChildren = item.children && item.children.length > 0
+  const isActive = pathname === item.path
+  const isChildActive = hasChildren && item.children?.some(child => pathname === child.path)
+
+  const Icon = item.icon
+
+  // Auto-expand if child is active
+  React.useEffect(() => {
+    if (isChildActive) {
+      setIsExpanded(true)
+    }
+  }, [isChildActive])
+
+  const handleClick = () => {
+    if (hasChildren) {
+      setIsExpanded(!isExpanded)
+    }
+  }
 
   return (
     <li>
-      <Link
-        href={item.href || "#"}
-        className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-          "hover:bg-gray-100 dark:hover:bg-[#44485e] text-gray-700 dark:text-[#acabc1]",
-          !isExpanded && "justify-center px-0"
-        )}
-      >
-        {item.icon}
-        <span className={cn(
-          "flex-1 transition-opacity duration-300",
-          !isExpanded ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
-        )}>{t(item.titleKey)}</span>
-      </Link>
+      {hasChildren ? (
+        // Parent item with children
+        <>
+          <button
+            onClick={handleClick}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+              "hover:bg-gray-100 dark:hover:bg-[#44485e]",
+              (isActive || isChildActive)
+                ? "bg-[#7367f0]/10 text-[#7367f0] dark:bg-[#7367f0]/20"
+                : "text-gray-700 dark:text-[#acabc1]",
+              !isExpandedView && "justify-center px-0"
+            )}
+          >
+            <Icon className="h-5 w-5 flex-shrink-0" />
+            <span className={cn(
+              "flex-1 text-left transition-opacity duration-300",
+              !isExpandedView ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+            )}>
+              {t(item.titleKey)}
+            </span>
+            {isExpandedView && (
+              <span className="flex-shrink-0">
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </span>
+            )}
+          </button>
+
+          {/* Children */}
+          {isExpanded && isExpandedView && (
+            <ul className="ml-4 mt-1 space-y-1 border-l border-gray-200 dark:border-[#44485e] pl-2">
+              {item.children?.map((child) => (
+                <MenuItemComponent key={child.key} item={child} level={level + 1} />
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        // Leaf item without children
+        <Link
+          href={item.path || "#"}
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+            "hover:bg-gray-100 dark:hover:bg-[#44485e]",
+            isActive
+              ? "bg-[#7367f0]/10 text-[#7367f0] dark:bg-[#7367f0]/20"
+              : "text-gray-700 dark:text-[#acabc1]",
+            !isExpandedView && "justify-center px-0",
+            level > 0 && "text-xs"
+          )}
+        >
+          <Icon className={cn("flex-shrink-0", level > 0 ? "h-4 w-4" : "h-5 w-5")} />
+          <span className={cn(
+            "flex-1 transition-opacity duration-300",
+            !isExpandedView ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+          )}>
+            {t(item.titleKey)}
+          </span>
+          {item.badge && isExpandedView && (
+            <span className={cn(
+              "rounded-full px-2 py-0.5 text-xs font-semibold",
+              item.badge.variant === 'danger' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+              item.badge.variant === 'warning' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+              item.badge.variant === 'success' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+              item.badge.variant === 'default' && "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+            )}>
+              {item.badge.text}
+            </span>
+          )}
+        </Link>
+      )}
     </li>
   )
 }
@@ -85,6 +150,9 @@ export function Sidebar() {
   const { isCollapsed, isHovered, isMobileOpen, toggleSidebar, setIsHovered, toggleMobileMenu } = useSidebar()
   const [isMobile, setIsMobile] = React.useState(false)
   const isExpanded = isCollapsed ? isHovered : true
+
+  // Get filtered menu items based on user role
+  const menuItems = useRoleBasedMenu()
 
   React.useEffect(() => {
     const checkMobile = () => {
@@ -202,8 +270,8 @@ export function Sidebar() {
       <div className="h-[calc(100vh-4rem)] overflow-y-auto px-4 py-4">
         <nav>
           <ul className="space-y-1 list-none">
-            {menuItems.map((item, index) => (
-              <MenuItemComponent key={index} item={item} />
+            {menuItems.map((item) => (
+              <MenuItemComponent key={item.key} item={item} />
             ))}
           </ul>
         </nav>
