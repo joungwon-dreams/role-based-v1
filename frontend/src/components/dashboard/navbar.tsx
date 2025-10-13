@@ -10,8 +10,13 @@ import { useSidebar } from "@/components/dashboard/sidebar"
 export function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false)
   const [isMobile, setIsMobile] = React.useState(false)
-  const { theme, toggleTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+  const { theme, setTheme } = useTheme()
   const { isCollapsed, isHovered, toggleMobileMenu } = useSidebar()
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   React.useEffect(() => {
     const checkMobile = () => {
@@ -49,16 +54,18 @@ export function Navbar() {
         </button>
 
         {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-5 w-5 text-gray-600 dark:text-[#acabc1]" />
-          ) : (
-            <Moon className="h-5 w-5 text-gray-600" />
-          )}
-        </button>
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5 text-gray-600 dark:text-[#acabc1]" />
+            ) : (
+              <Moon className="h-5 w-5 text-gray-600" />
+            )}
+          </button>
+        )}
 
         {/* Shortcuts */}
         <button className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100">

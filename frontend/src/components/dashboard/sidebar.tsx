@@ -198,10 +198,12 @@ export function Sidebar() {
 
       {/* Menu */}
       <div className="h-[calc(100vh-4rem)] overflow-y-auto px-4 py-4">
-        <nav className="space-y-1">
-          {menuItems.map((item, index) => (
-            <MenuItemComponent key={index} item={item} />
-          ))}
+        <nav>
+          <ul className="space-y-1 list-none">
+            {menuItems.map((item, index) => (
+              <MenuItemComponent key={index} item={item} />
+            ))}
+          </ul>
         </nav>
       </div>
     </aside>
