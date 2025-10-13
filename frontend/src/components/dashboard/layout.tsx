@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Sidebar, SidebarContext } from "@/components/dashboard/sidebar"
 import { Navbar } from "@/components/dashboard/navbar"
+import { Toaster } from "@/components/ui/sonner"
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const context = React.useContext(SidebarContext)
@@ -72,10 +73,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       setIsHovered,
       toggleMobileMenu
     }}>
-      <div className="flex min-h-screen bg-gray-50 dark:bg-[#25293c] transition-colors">
+      <div className="flex min-h-screen bg-gray-50 dark:bg-[#25293c] transition-colors" suppressHydrationWarning>
         <Sidebar />
         <DashboardContent>{children}</DashboardContent>
       </div>
+      {mounted && <Toaster />}
     </SidebarContext.Provider>
   )
 }

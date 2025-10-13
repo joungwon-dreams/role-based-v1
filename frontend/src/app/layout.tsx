@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TRPCProvider } from "@/lib/trpc/react";
-import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
@@ -41,7 +40,6 @@ export default function RootLayout({
             {children}
           </TRPCProvider>
         </ThemeProvider>
-        <Toaster />
       </body>
     </html>
   );
