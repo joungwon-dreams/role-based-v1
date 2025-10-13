@@ -26,6 +26,16 @@ export const userRouter = router({
       name: user.name,
       image: user.image,
       emailVerified: user.emailVerified,
+      bio: user.bio,
+      phone: user.phone,
+      country: user.country,
+      language: user.language,
+      jobTitle: user.jobTitle,
+      company: user.company,
+      location: user.location,
+      website: user.website,
+      skype: user.skype,
+      bannerImage: user.bannerImage,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -39,6 +49,16 @@ export const userRouter = router({
       z.object({
         name: z.string().min(2).optional(),
         image: z.string().url().nullable().optional(),
+        bio: z.string().optional(),
+        phone: z.string().optional(),
+        country: z.string().optional(),
+        language: z.string().optional(),
+        jobTitle: z.string().optional(),
+        company: z.string().optional(),
+        location: z.string().optional(),
+        website: z.string().url().optional(),
+        skype: z.string().optional(),
+        bannerImage: z.string().url().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
