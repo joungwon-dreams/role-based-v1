@@ -1,15 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Camera, Edit2, MapPin, Calendar } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { Edit2, Mail, Phone, Globe, MessageSquare } from 'lucide-react'
 import { trpcClient } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { CrudSheet } from '@/components/common/crud-sheet'
 import { useLocale } from '@/lib/i18n'
 import { toast } from '@/lib/utils/toast'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 type Profile = {
   id: string
@@ -30,10 +34,19 @@ type Profile = {
   updatedAt: Date
 }
 
+const tabs = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'teams', label: 'Teams' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'connections', label: 'Connections' },
+]
+
 export default function ProfilePage() {
   const { t } = useLocale()
-  const [isEditingAbout, setIsEditingAbout] = useState(false)
-  const [isEditingContacts, setIsEditingContacts] = useState(false)
+  const searchParams = useSearchParams()
+  const currentTab = searchParams?.get('tab') || 'profile'
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -80,7 +93,7 @@ export default function ProfilePage() {
     }
   }, [profile])
 
-  const handleSaveAbout = async () => {
+  const handleSave = async () => {
     setIsSaving(true)
     try {
       await trpcClient.user.updateProfile.mutate({
@@ -90,28 +103,13 @@ export default function ProfilePage() {
         country,
         language,
         bio,
-      })
-      toast.success(t('common.toast.updated', { entity: 'Profile' }))
-      await fetchProfile()
-      setIsEditingAbout(false)
-    } catch (error: any) {
-      toast.error(t('common.toast.updateError', { entity: 'Profile' }), error.message)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleSaveContacts = async () => {
-    setIsSaving(true)
-    try {
-      await trpcClient.user.updateProfile.mutate({
         phone,
         skype,
         website,
       })
       toast.success(t('common.toast.updated', { entity: 'Profile' }))
       await fetchProfile()
-      setIsEditingContacts(false)
+      setIsEditingProfile(false)
     } catch (error: any) {
       toast.error(t('common.toast.updateError', { entity: 'Profile' }), error.message)
     } finally {
@@ -120,163 +118,350 @@ export default function ProfilePage() {
   }
 
   if (isLoading) {
-    return <div className="p-4">{t('common.loading')}</div>
+    return <div className="p-6">{t('common.loading')}</div>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#25293c]">
-      {/* Header with Banner */}
-      <div className="relative">
-        {/* Banner Image */}
-        <div className="h-64 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 relative">
-          {profile?.bannerImage && (
+    <div className="p-6">
+      {/* Profile Header Card */}
+      <Card className="mb-6">
+        <div className="p-6">
+          <div className="flex items-start gap-6">
+            {/* Avatar */}
             <img
-              src={profile.bannerImage}
-              alt="Banner"
-              className="w-full h-full object-cover"
+              src={profile?.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile?.name || 'User')}
+              alt={profile?.name}
+              className="w-32 h-32 rounded-lg object-cover"
             />
-          )}
-          <button className="absolute top-4 right-4 bg-white dark:bg-[#2f3349] p-2 rounded-lg shadow hover:bg-gray-100 dark:hover:bg-[#44485e]">
-            <Camera className="h-5 w-5" />
-          </button>
-        </div>
 
-        {/* Profile Info */}
-        <div className="max-w-7xl mx-auto px-4 -mt-20 relative">
-          <div className="bg-white dark:bg-[#2f3349] rounded-lg shadow p-6">
-            <div className="flex items-end gap-6">
-              {/* Avatar */}
-              <div className="relative">
-                <img
-                  src={profile?.image || '/default-avatar.png'}
-                  alt={profile?.name}
-                  className="w-32 h-32 rounded-lg object-cover ring-4 ring-white dark:ring-[#2f3349]"
-                />
-                <button className="absolute bottom-2 right-2 bg-white dark:bg-[#2f3349] p-1.5 rounded-full shadow">
-                  <Camera className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* User Info */}
-              <div className="flex-1 pb-2">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {profile?.name}
-                </h1>
-                <p className="text-gray-600 dark:text-[#acabc1]">
-                  {profile?.jobTitle || 'Job Title'}
-                </p>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600 dark:text-[#acabc1]">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {profile?.country || 'Country'}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Joined {new Date(profile?.createdAt || '').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </span>
-                </div>
-              </div>
-
-              <Button className="mb-2">Connected</Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Sidebar */}
-          <div className="col-span-12 lg:col-span-4 space-y-6">
-            {/* About Card */}
-            <div className="bg-white dark:bg-[#2f3349] rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase tracking-wider">
-                  About
-                </h3>
-                <button
-                  onClick={() => setIsEditingAbout(true)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-white"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Full Name:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.name}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Role:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.jobTitle || 'Developer'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Company:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.company || 'Company'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Country:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.country || 'USA'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Language:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.language || 'English'}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Contacts Card */}
-            <div className="bg-white dark:bg-[#2f3349] rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase tracking-wider">
-                  Contacts
-                </h3>
-                <button
-                  onClick={() => setIsEditingContacts(true)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-white"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Contact:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.phone || '(123) 456-7890'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Skype:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.skype || 'username'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Email:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.email}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-[#acabc1]">Website:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{profile?.website || 'website.com'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="col-span-12 lg:col-span-8">
-            <div className="bg-white dark:bg-[#2f3349] rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Bio</h3>
-              <p className="text-gray-600 dark:text-[#acabc1]">
-                {profile?.bio || 'No bio yet. Click Edit to add your bio.'}
+            {/* User Info */}
+            <div className="flex-1">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
+                {profile?.name}
+              </h2>
+              <p className="text-gray-600 dark:text-[#acabc1] mb-4">
+                {profile?.jobTitle || 'Job Title'}
               </p>
+
+              {/* Tabs */}
+              <div className="flex gap-6 border-b border-gray-200 dark:border-[#44485e]">
+                {tabs.map((tab) => (
+                  <Link
+                    key={tab.id}
+                    href={`/profile?tab=${tab.id}`}
+                    className={cn(
+                      'pb-3 px-1 border-b-2 transition-colors text-sm font-medium',
+                      currentTab === tab.id
+                        ? 'border-[#7367f0] text-[#7367f0]'
+                        : 'border-transparent text-gray-600 dark:text-[#acabc1] hover:text-gray-900 dark:hover:text-white'
+                    )}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Edit About Sheet */}
+      {/* Content based on tab */}
+      {currentTab === 'profile' && (
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Column - About & Contact */}
+          <div className="col-span-12 lg:col-span-4">
+            <Card>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    About
+                  </h3>
+                  <button
+                    onClick={() => setIsEditingProfile(true)}
+                    className="text-gray-400 hover:text-[#7367f0] transition-colors"
+                  >
+                    <Edit2 className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Full Name */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
+                      Full Name
+                    </p>
+                    <p className="text-sm text-gray-900 dark:text-white">
+                      {profile?.name}
+                    </p>
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
+                      Status
+                    </p>
+                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      Active
+                    </span>
+                  </div>
+
+                  {/* Role */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
+                      Role
+                    </p>
+                    <p className="text-sm text-gray-900 dark:text-white">
+                      {profile?.jobTitle || 'Developer'}
+                    </p>
+                  </div>
+
+                  {/* Company */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
+                      Company
+                    </p>
+                    <p className="text-sm text-gray-900 dark:text-white">
+                      {profile?.company || 'Company'}
+                    </p>
+                  </div>
+
+                  {/* Country */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
+                      Country
+                    </p>
+                    <p className="text-sm text-gray-900 dark:text-white">
+                      {profile?.country || 'USA'}
+                    </p>
+                  </div>
+
+                  {/* Language */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
+                      Languages
+                    </p>
+                    <p className="text-sm text-gray-900 dark:text-white">
+                      {profile?.language || 'English'}
+                    </p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 dark:border-[#44485e] my-6"></div>
+
+                  {/* Contacts */}
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-4">
+                    Contacts
+                  </h4>
+
+                  {/* Contact */}
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Contact</p>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {profile?.phone || '(123) 456-7890'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Skype */}
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="h-4 w-4 text-gray-400" />
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Skype</p>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {profile?.skype || 'username'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Email</p>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {profile?.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Website */}
+                  <div className="flex items-center gap-3">
+                    <Globe className="h-4 w-4 text-gray-400" />
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Website</p>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {profile?.website || 'website.com'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Column - Activity & Overview */}
+          <div className="col-span-12 lg:col-span-8 space-y-6">
+            {/* Activity Timeline */}
+            <Card>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Activity Timeline
+                  </h3>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Timeline Item 1 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-2 h-2 rounded-full bg-[#7367f0]"></div>
+                      <div className="w-px flex-1 bg-gray-200 dark:bg-[#44485e]"></div>
+                    </div>
+                    <div className="flex-1 pb-6">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                          12 Invoices have been paid
+                        </h4>
+                        <span className="text-xs text-gray-500 dark:text-[#acabc1]">
+                          12 min ago
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-[#acabc1]">
+                        Invoices have been paid to the company
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Timeline Item 2 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <div className="w-px flex-1 bg-gray-200 dark:bg-[#44485e]"></div>
+                    </div>
+                    <div className="flex-1 pb-6">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                          Client Meeting
+                        </h4>
+                        <span className="text-xs text-gray-500 dark:text-[#acabc1]">
+                          45 min ago
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-[#acabc1]">
+                        Project meeting with john @10:15am
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Timeline Item 3 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                          Create a new project for client
+                        </h4>
+                        <span className="text-xs text-gray-500 dark:text-[#acabc1]">
+                          2 Day Ago
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-[#acabc1]">
+                        6 team members in a project
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Connections */}
+            <Card>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Connections
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-[#25293c]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={`https://ui-avatars.com/api/?name=User ${i}`}
+                          alt={`User ${i}`}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            User {i}
+                          </h4>
+                          <p className="text-xs text-gray-500 dark:text-[#acabc1]">
+                            {i * 100} Connections
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        Connected
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 text-center">
+                  <Link
+                    href="/profile?tab=connections"
+                    className="text-sm text-[#7367f0] hover:underline"
+                  >
+                    View all connections
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {currentTab === 'teams' && (
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Teams</h3>
+            <p className="text-gray-600 dark:text-[#acabc1]">Teams content coming soon...</p>
+          </div>
+        </Card>
+      )}
+
+      {currentTab === 'projects' && (
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Projects</h3>
+            <p className="text-gray-600 dark:text-[#acabc1]">Projects content coming soon...</p>
+          </div>
+        </Card>
+      )}
+
+      {currentTab === 'connections' && (
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Connections</h3>
+            <p className="text-gray-600 dark:text-[#acabc1]">Connections content coming soon...</p>
+          </div>
+        </Card>
+      )}
+
+      {/* Edit Profile Sheet */}
       <CrudSheet
-        open={isEditingAbout}
-        onOpenChange={setIsEditingAbout}
-        title="Edit About"
-        onSave={handleSaveAbout}
+        open={isEditingProfile}
+        onOpenChange={setIsEditingProfile}
+        title="Edit Profile"
+        onSave={handleSave}
         isLoading={isSaving}
         size="lg"
       >
@@ -327,28 +512,6 @@ export default function ProfilePage() {
             />
           </div>
           <div>
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell us about yourself..."
-              rows={5}
-            />
-          </div>
-        </div>
-      </CrudSheet>
-
-      {/* Edit Contacts Sheet */}
-      <CrudSheet
-        open={isEditingContacts}
-        onOpenChange={setIsEditingContacts}
-        title="Edit Contacts"
-        onSave={handleSaveContacts}
-        isLoading={isSaving}
-      >
-        <div className="space-y-4">
-          <div>
             <Label htmlFor="phone">Phone</Label>
             <Input
               id="phone"
@@ -373,6 +536,16 @@ export default function ProfilePage() {
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
               placeholder="https://yourwebsite.com"
+            />
+          </div>
+          <div>
+            <Label htmlFor="bio">Bio</Label>
+            <Textarea
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell us about yourself..."
+              rows={5}
             />
           </div>
         </div>
