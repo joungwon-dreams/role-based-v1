@@ -165,5 +165,32 @@
   "sidebar": {
     "dashboard": "대시보드",
     "users": "사용자"
+  },
+  "common": {
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "deleting": "삭제 중...",
+    "edit": "수정",
+    "create": "생성",
+    "update": "업데이트",
+    "search": "검색",
+    "filter": "필터",
+    "actions": "작업",
+    "loading": "로딩 중...",
+    "noResults": "결과 없음",
+    "deleteConfirm": {
+      "title": "정말 삭제하시겠습니까?",
+      "description": "이 작업은 되돌릴 수 없습니다.",
+      "descriptionWithName": "{name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+    },
+    "toast": {
+      "created": "{entity}이(가) 성공적으로 생성되었습니다",
+      "updated": "{entity}이(가) 성공적으로 업데이트되었습니다",
+      "deleted": "{entity}이(가) 성공적으로 삭제되었습니다",
+      "createError": "{entity} 생성에 실패했습니다",
+      "updateError": "{entity} 업데이트에 실패했습니다",
+      "deleteError": "{entity} 삭제에 실패했습니다"
+    }
   }
 }
