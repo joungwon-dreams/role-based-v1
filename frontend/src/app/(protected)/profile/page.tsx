@@ -1,555 +1,366 @@
+/**
+ * Profile Page - /profile
+ *
+ * Main profile page with user information, activity timeline, connections, and teams
+ * Based on Vuexy design system
+ *
+ * Features:
+ * - Profile header with banner and avatar
+ * - Tab navigation
+ * - Two-column layout (About/Overview + Activity/Connections/Teams)
+ * - Responsive design
+ * - Dark mode support
+ */
+
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { Edit2, Mail, Phone, Globe, MessageSquare } from 'lucide-react'
-import { trpcClient } from '@/lib/trpc/client'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { CrudSheet } from '@/components/common/crud-sheet'
-import { useLocale } from '@/lib/i18n'
-import { toast } from '@/lib/utils/toast'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
-
-type Profile = {
-  id: string
-  email: string
-  name: string
-  image: string | null
-  bio: string | null
-  phone: string | null
-  country: string | null
-  language: string | null
-  jobTitle: string | null
-  company: string | null
-  location: string | null
-  website: string | null
-  skype: string | null
-  bannerImage: string | null
-  createdAt: Date
-  updatedAt: Date
-}
-
-const tabs = [
-  { id: 'profile', label: 'Profile' },
-  { id: 'teams', label: 'Teams' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'connections', label: 'Connections' },
-]
+import { ProfileHeader } from "@/components/profile/profile-header"
+import { ProfileTabs } from "@/components/profile/profile-tabs"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  User,
+  Check,
+  Crown,
+  Flag,
+  Languages,
+  Phone,
+  MessageSquare,
+  Mail,
+  Users,
+  ChartBar,
+  FileText,
+  MoreVertical,
+  UserCheck,
+} from "lucide-react"
 
 export default function ProfilePage() {
-  const { t } = useLocale()
-  const searchParams = useSearchParams()
-  const currentTab = searchParams?.get('tab') || 'profile'
-
-  const [isEditingProfile, setIsEditingProfile] = useState(false)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-
-  // Form states
-  const [name, setName] = useState('')
-  const [jobTitle, setJobTitle] = useState('')
-  const [company, setCompany] = useState('')
-  const [country, setCountry] = useState('')
-  const [language, setLanguage] = useState('')
-  const [bio, setBio] = useState('')
-  const [phone, setPhone] = useState('')
-  const [skype, setSkype] = useState('')
-  const [website, setWebsite] = useState('')
-
-  // Fetch profile
-  const fetchProfile = async () => {
-    try {
-      const data = await trpcClient.user.getProfile.query()
-      setProfile(data as any)
-    } catch (error: any) {
-      toast.error('Failed to load profile', error.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchProfile()
-  }, [])
-
-  // Initialize form when profile loads
-  useEffect(() => {
-    if (profile) {
-      setName(profile.name || '')
-      setJobTitle(profile.jobTitle || '')
-      setCompany(profile.company || '')
-      setCountry(profile.country || '')
-      setLanguage(profile.language || '')
-      setBio(profile.bio || '')
-      setPhone(profile.phone || '')
-      setSkype(profile.skype || '')
-      setWebsite(profile.website || '')
-    }
-  }, [profile])
-
-  const handleSave = async () => {
-    setIsSaving(true)
-    try {
-      await trpcClient.user.updateProfile.mutate({
-        name,
-        jobTitle,
-        company,
-        country,
-        language,
-        bio,
-        phone,
-        skype,
-        website,
-      })
-      toast.success(t('common.toast.updated', { entity: 'Profile' }))
-      await fetchProfile()
-      setIsEditingProfile(false)
-    } catch (error: any) {
-      toast.error(t('common.toast.updateError', { entity: 'Profile' }), error.message)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  if (isLoading) {
-    return <div className="p-6">{t('common.loading')}</div>
-  }
-
   return (
-    <div className="p-6">
-      {/* Profile Header Card */}
-      <Card className="mb-6">
-        <div className="p-6">
-          <div className="flex items-start gap-6">
-            {/* Avatar */}
-            <img
-              src={profile?.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile?.name || 'User')}
-              alt={profile?.name}
-              className="w-32 h-32 rounded-lg object-cover"
-            />
+    <main className="pt-[5rem]">
+      <div className="pt-6">
+        {/* Profile Header (Banner + Avatar + Info) */}
+        <ProfileHeader
+          name="John Doe"
+          role="UX Designer"
+          location="Vatican City"
+          joinDate="Joined April 2021"
+        />
 
-            {/* User Info */}
-            <div className="flex-1">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
-                {profile?.name}
-              </h2>
-              <p className="text-gray-600 dark:text-[#acabc1] mb-4">
-                {profile?.jobTitle || 'Job Title'}
-              </p>
+        {/* Tab Navigation */}
+        <ProfileTabs activeTab="profile" />
 
-              {/* Tabs */}
-              <div className="flex gap-6 border-b border-gray-200 dark:border-[#44485e]">
-                {tabs.map((tab) => (
-                  <Link
-                    key={tab.id}
-                    href={`/profile?tab=${tab.id}`}
-                    className={cn(
-                      'pb-3 px-1 border-b-2 transition-colors text-sm font-medium',
-                      currentTab === tab.id
-                        ? 'border-[#7367f0] text-[#7367f0]'
-                        : 'border-transparent text-gray-600 dark:text-[#acabc1] hover:text-gray-900 dark:hover:text-white'
-                    )}
-                  >
-                    {tab.label}
-                  </Link>
-                ))}
+        {/* Profile Content */}
+        <div className="px-6">
+          <div className="flex flex-wrap -mx-3">
+            {/* Left Column - About & Overview (33%) */}
+            <div className="w-full xl:w-1/3 px-3">
+              {/* About Card */}
+              <div
+                className="rounded-lg bg-white dark:bg-[#2f3349] p-6 mb-6 transition-colors"
+                style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+              >
+                <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-4">
+                  About
+                </p>
+                <ul className="space-y-4">
+                  <li className="flex items-center gap-3 text-sm">
+                    <User className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Full Name:</span>
+                    <span className="text-gray-600 dark:text-gray-400">John Doe</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <Check className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Active</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <Crown className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Role:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Developer</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <Flag className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Country:</span>
+                    <span className="text-gray-600 dark:text-gray-400">USA</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <Languages className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Languages:</span>
+                    <span className="text-gray-600 dark:text-gray-400">English</span>
+                  </li>
+                </ul>
+
+                <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mt-6 mb-4">
+                  Contacts
+                </p>
+                <ul className="space-y-4">
+                  <li className="flex items-center gap-3 text-sm">
+                    <Phone className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span>
+                    <span className="text-gray-600 dark:text-gray-400">(123) 456-7890</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <MessageSquare className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Skype:</span>
+                    <span className="text-gray-600 dark:text-gray-400">john.doe</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <Mail className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Email:</span>
+                    <span className="text-gray-600 dark:text-gray-400">john.doe@example.com</span>
+                  </li>
+                </ul>
+
+                <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mt-6 mb-4">
+                  Teams
+                </p>
+                <ul className="space-y-3">
+                  <li className="text-sm">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Backend Developer</span>
+                    <span className="text-gray-500 dark:text-gray-400"> (126 Members)</span>
+                  </li>
+                  <li className="text-sm">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">React Developer</span>
+                    <span className="text-gray-500 dark:text-gray-400"> (98 Members)</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Overview Card */}
+              <div
+                className="rounded-lg bg-white dark:bg-[#2f3349] p-6 mb-6 transition-colors"
+                style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+              >
+                <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-4">
+                  Overview
+                </p>
+                <ul className="space-y-4">
+                  <li className="flex items-center gap-3 text-sm">
+                    <Check className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Task Compiled:</span>
+                    <span className="text-gray-600 dark:text-gray-400">13.5k</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <FileText className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Projects Compiled:</span>
+                    <span className="text-gray-600 dark:text-gray-400">146</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <Users className="w-5 h-5 text-gray-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Connections:</span>
+                    <span className="text-gray-600 dark:text-gray-400">897</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Right Column - Activity Timeline & Connections & Teams (67%) */}
+            <div className="w-full xl:w-2/3 px-3">
+              {/* Activity Timeline Card */}
+              <div
+                className="rounded-lg bg-white dark:bg-[#2f3349] overflow-hidden mb-6 transition-colors"
+                style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+              >
+                <div className="border-b border-gray-200 dark:border-[#44485e] px-6 py-4 flex items-center justify-between">
+                  <h5 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                    <ChartBar className="w-5 h-5" />
+                    Activity Timeline
+                  </h5>
+                  <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-6">
+                    {/* Timeline Item 1 */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-[#7367f0]"></div>
+                        <div className="w-0.5 h-full bg-gray-200 dark:bg-[#44485e] mt-2"></div>
+                      </div>
+                      <div className="flex-1 pb-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <h6 className="font-semibold text-gray-900 dark:text-white">
+                            12 Invoices have been paid
+                          </h6>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">12 min ago</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          Invoices have been paid to the company
+                        </p>
+                        <div className="inline-flex items-center gap-2 bg-gray-100 dark:bg-[#44485e] rounded px-3 py-2">
+                          <FileText className="w-4 h-4 text-red-500" />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">invoices.pdf</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline Item 2 */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                        <div className="w-0.5 h-full bg-gray-200 dark:bg-[#44485e] mt-2"></div>
+                      </div>
+                      <div className="flex-1 pb-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <h6 className="font-semibold text-gray-900 dark:text-white">
+                            Client Meeting
+                          </h6>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">45 min ago</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          Project meeting with john @10:15am
+                        </p>
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#3a3e5a] rounded-lg">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center flex-shrink-0">
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">Lester McCarthy (Client)</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">CEO of Pixinvent</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline Item 3 */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h6 className="font-semibold text-gray-900 dark:text-white">
+                            Create a new project for client
+                          </h6>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">2 Day Ago</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          6 team members in a project
+                        </p>
+                        <div className="flex -space-x-2">
+                          {[
+                            "from-blue-400 to-blue-600",
+                            "from-purple-400 to-purple-600",
+                            "from-pink-400 to-pink-600"
+                          ].map((color, i) => (
+                            <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${color} flex items-center justify-center border-2 border-white dark:border-[#2f3349]`}>
+                              <User className="w-4 h-4 text-white" />
+                            </div>
+                          ))}
+                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#44485e] flex items-center justify-center border-2 border-white dark:border-[#2f3349]">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">+3</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connections Card */}
+              <div
+                className="rounded-lg bg-white dark:bg-[#2f3349] overflow-hidden mb-6 transition-colors"
+                style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+              >
+                <div className="border-b border-gray-200 dark:border-[#44485e] px-6 py-4 flex items-center justify-between">
+                  <h5 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Connections
+                  </h5>
+                  <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {[
+                      { name: "Cecilia Payne", connections: "45 Connections", color: "from-blue-400 to-blue-600" },
+                      { name: "Curtis Fletcher", connections: "1.32k Connections", color: "from-purple-400 to-purple-600" },
+                      { name: "Alice Stone", connections: "125 Connections", color: "from-pink-400 to-pink-600" },
+                      { name: "Darrell Barnes", connections: "456 Connections", color: "from-green-400 to-green-600" },
+                      { name: "Eugenia Moore", connections: "1.2k Connections", color: "from-orange-400 to-red-600" },
+                    ].map((connection, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border border-gray-200 dark:border-[#44485e] rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${connection.color} flex items-center justify-center flex-shrink-0`}>
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">
+                              {connection.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {connection.connections}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="flex-shrink-0">
+                          <UserCheck className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-center">
+                    <Button variant="link" className="text-[#7367f0] hover:text-[#6658d3]">
+                      View all connections
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Teams Card */}
+              <div
+                className="rounded-lg bg-white dark:bg-[#2f3349] overflow-hidden mb-6 transition-colors"
+                style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+              >
+                <div className="border-b border-gray-200 dark:border-[#44485e] px-6 py-4 flex items-center justify-between">
+                  <h5 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Teams
+                  </h5>
+                  <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-4 mb-4">
+                    {[
+                      { name: "React Developers", members: "72 Members", badge: "Developer", color: "from-blue-400 to-blue-600", badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+                      { name: "Support Team", members: "122 Members", badge: "Support", color: "from-green-400 to-green-600", badgeColor: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+                      { name: "UI Designers", members: "7 Members", badge: "Designer", color: "from-pink-400 to-pink-600", badgeColor: "bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" },
+                      { name: "Vue.js Developers", members: "289 Members", badge: "Developer", color: "from-teal-400 to-teal-600", badgeColor: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300" },
+                      { name: "Digital Marketing", members: "24 Members", badge: "Marketing", color: "from-purple-400 to-purple-600", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+                    ].map((team, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border border-gray-200 dark:border-[#44485e] rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${team.color} flex items-center justify-center flex-shrink-0`}>
+                            <Users className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">
+                              {team.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {team.members}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge className={`${team.badgeColor} border-0`}>
+                          {team.badge}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-center">
+                    <Button variant="link" className="text-[#7367f0] hover:text-[#6658d3]">
+                      View all teams
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </Card>
-
-      {/* Content based on tab */}
-      {currentTab === 'profile' && (
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Column - About & Contact */}
-          <div className="col-span-12 lg:col-span-4">
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    About
-                  </h3>
-                  <button
-                    onClick={() => setIsEditingProfile(true)}
-                    className="text-gray-400 hover:text-[#7367f0] transition-colors"
-                  >
-                    <Edit2 className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Full Name */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
-                      Full Name
-                    </p>
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {profile?.name}
-                    </p>
-                  </div>
-
-                  {/* Status */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
-                      Status
-                    </p>
-                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      Active
-                    </span>
-                  </div>
-
-                  {/* Role */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
-                      Role
-                    </p>
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {profile?.jobTitle || 'Developer'}
-                    </p>
-                  </div>
-
-                  {/* Company */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
-                      Company
-                    </p>
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {profile?.company || 'Company'}
-                    </p>
-                  </div>
-
-                  {/* Country */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
-                      Country
-                    </p>
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {profile?.country || 'USA'}
-                    </p>
-                  </div>
-
-                  {/* Language */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-1">
-                      Languages
-                    </p>
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {profile?.language || 'English'}
-                    </p>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="border-t border-gray-200 dark:border-[#44485e] my-6"></div>
-
-                  {/* Contacts */}
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-[#acabc1] uppercase mb-4">
-                    Contacts
-                  </h4>
-
-                  {/* Contact */}
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-gray-400" />
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Contact</p>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {profile?.phone || '(123) 456-7890'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Skype */}
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="h-4 w-4 text-gray-400" />
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Skype</p>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {profile?.skype || 'username'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Email */}
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Email</p>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {profile?.email}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Website */}
-                  <div className="flex items-center gap-3">
-                    <Globe className="h-4 w-4 text-gray-400" />
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500 dark:text-[#acabc1]">Website</p>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {profile?.website || 'website.com'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Right Column - Activity & Overview */}
-          <div className="col-span-12 lg:col-span-8 space-y-6">
-            {/* Activity Timeline */}
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Activity Timeline
-                  </h3>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Timeline Item 1 */}
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-2 h-2 rounded-full bg-[#7367f0]"></div>
-                      <div className="w-px flex-1 bg-gray-200 dark:bg-[#44485e]"></div>
-                    </div>
-                    <div className="flex-1 pb-6">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                          12 Invoices have been paid
-                        </h4>
-                        <span className="text-xs text-gray-500 dark:text-[#acabc1]">
-                          12 min ago
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                        Invoices have been paid to the company
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Timeline Item 2 */}
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <div className="w-px flex-1 bg-gray-200 dark:bg-[#44485e]"></div>
-                    </div>
-                    <div className="flex-1 pb-6">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                          Client Meeting
-                        </h4>
-                        <span className="text-xs text-gray-500 dark:text-[#acabc1]">
-                          45 min ago
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                        Project meeting with john @10:15am
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Timeline Item 3 */}
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                          Create a new project for client
-                        </h4>
-                        <span className="text-xs text-gray-500 dark:text-[#acabc1]">
-                          2 Day Ago
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                        6 team members in a project
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Connections */}
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Connections
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-[#25293c]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={`https://ui-avatars.com/api/?name=User ${i}`}
-                          alt={`User ${i}`}
-                          className="w-10 h-10 rounded-full"
-                        />
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                            User {i}
-                          </h4>
-                          <p className="text-xs text-gray-500 dark:text-[#acabc1]">
-                            {i * 100} Connections
-                          </p>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        Connected
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 text-center">
-                  <Link
-                    href="/profile?tab=connections"
-                    className="text-sm text-[#7367f0] hover:underline"
-                  >
-                    View all connections
-                  </Link>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {currentTab === 'teams' && (
-        <Card>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Teams</h3>
-            <p className="text-gray-600 dark:text-[#acabc1]">Teams content coming soon...</p>
-          </div>
-        </Card>
-      )}
-
-      {currentTab === 'projects' && (
-        <Card>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Projects</h3>
-            <p className="text-gray-600 dark:text-[#acabc1]">Projects content coming soon...</p>
-          </div>
-        </Card>
-      )}
-
-      {currentTab === 'connections' && (
-        <Card>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Connections</h3>
-            <p className="text-gray-600 dark:text-[#acabc1]">Connections content coming soon...</p>
-          </div>
-        </Card>
-      )}
-
-      {/* Edit Profile Sheet */}
-      <CrudSheet
-        open={isEditingProfile}
-        onOpenChange={setIsEditingProfile}
-        title="Edit Profile"
-        onSave={handleSave}
-        isLoading={isSaving}
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
-            />
-          </div>
-          <div>
-            <Label htmlFor="jobTitle">Job Title</Label>
-            <Input
-              id="jobTitle"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-              placeholder="e.g., Senior Developer"
-            />
-          </div>
-          <div>
-            <Label htmlFor="company">Company</Label>
-            <Input
-              id="company"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder="Enter your company"
-            />
-          </div>
-          <div>
-            <Label htmlFor="country">Country</Label>
-            <Input
-              id="country"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              placeholder="e.g., USA"
-            />
-          </div>
-          <div>
-            <Label htmlFor="language">Language</Label>
-            <Input
-              id="language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              placeholder="e.g., English"
-            />
-          </div>
-          <div>
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(123) 456-7890"
-            />
-          </div>
-          <div>
-            <Label htmlFor="skype">Skype</Label>
-            <Input
-              id="skype"
-              value={skype}
-              onChange={(e) => setSkype(e.target.value)}
-              placeholder="your.skype.username"
-            />
-          </div>
-          <div>
-            <Label htmlFor="website">Website</Label>
-            <Input
-              id="website"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://yourwebsite.com"
-            />
-          </div>
-          <div>
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell us about yourself..."
-              rows={5}
-            />
-          </div>
-        </div>
-      </CrudSheet>
-    </div>
+      </div>
+    </main>
   )
 }
