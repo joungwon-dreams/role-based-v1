@@ -294,6 +294,225 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     setEmotionPickerCommentId(null)
   }
 
+  // Recursive comment renderer
+  const renderComment = (comment: any, depth: number = 0) => {
+    const createdAt = typeof comment.createdAt === 'string'
+      ? new Date(comment.createdAt)
+      : comment.createdAt
+    const isOwner = currentUserId === comment.authorId
+    const replies = comments.filter(c => c.parentId === comment.id)
+
+    return (
+      <div key={comment.id} className={depth === 0 ? "pb-4 border-b-2 border-gray-200 dark:border-[#44485e] last:border-0" : ""}>
+        <div className="flex items-center justify-between mb-2">
+          <UserAvatar
+            userId={comment.authorId}
+            name={comment.authorName || undefined}
+            email={comment.authorEmail || undefined}
+            size="sm"
+            showEmail={true}
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 dark:text-[#acabc1]">
+              {formatDistanceToNow(createdAt, { addSuffix: true })}
+            </span>
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => handleEdit(comment.id, comment.content)}
+                    disabled={updateMutation.isLoading || editingId === comment.id}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDelete(comment.id)}
+                    disabled={deleteMutation.isLoading}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
+
+        {/* Edit Mode */}
+        {editingId === comment.id ? (
+          <div className="space-y-2">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="bg-white dark:bg-[#2f3349] resize-none"
+              rows={calculateRows(editContent)}
+              disabled={updateMutation.isLoading}
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleUpdate(comment.id)}
+                disabled={!editContent.trim() || updateMutation.isLoading}
+                className="bg-[#7367f0] hover:bg-[#6658d3]"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelEdit}
+                disabled={updateMutation.isLoading}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap pl-0">
+              {comment.content}
+            </p>
+
+            {/* Action Bar */}
+            <div className="flex items-center gap-1 mt-2">
+              <div className="relative" ref={emotionPickerCommentId === comment.id ? emotionPickerRef : null}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-7 text-xs ${emotionPickerCommentId === comment.id ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
+                  onClick={() => setEmotionPickerCommentId(emotionPickerCommentId === comment.id ? null : comment.id)}
+                >
+                  <Smile className="h-3.5 w-3.5 mr-1.5" />
+                  Emotion
+                </Button>
+                {emotionPickerCommentId === comment.id && (
+                  <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableEmotions.map(emoji => (
+                        <button
+                          key={emoji}
+                          onClick={() => handleEmotionSelect(emoji, comment.id)}
+                          className="text-lg hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-1 transition-colors"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-gray-600 dark:text-[#acabc1]"
+                onClick={() => handleReply(comment.id)}
+              >
+                <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                Reply
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Inline Reply Form */}
+        {replyingToId === comment.id && (
+          <div className="mt-3 space-y-2">
+            <Textarea
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder="Write a reply..."
+              className="min-h-[60px] resize-none bg-white dark:bg-[#2f3349]"
+              rows={2}
+              autoFocus
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleSubmitReply(comment.id)}
+                disabled={!replyContent.trim() || createMutation.isLoading}
+                className="bg-[#7367f0] hover:bg-[#6658d3]"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Send
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelReply}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Attachments */}
+        {comment.attachments && comment.attachments.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {/* Images */}
+            {comment.attachments.filter((a: any) => a.type === 'image').length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {comment.attachments
+                  .filter((a: any) => a.type === 'image')
+                  .map((attachment: any, idx: number) => (
+                    <img
+                      key={idx}
+                      src={attachment.url}
+                      alt={attachment.name}
+                      className="max-w-xs rounded border border-gray-300 dark:border-[#44485e] cursor-pointer hover:opacity-90"
+                      onClick={() => window.open(attachment.url, '_blank')}
+                    />
+                  ))}
+              </div>
+            )}
+
+            {/* Files */}
+            {comment.attachments.filter((a: any) => a.type === 'file').length > 0 && (
+              <div className="space-y-1">
+                {comment.attachments
+                  .filter((a: any) => a.type === 'file')
+                  .map((attachment: any, idx: number) => (
+                    <a
+                      key={idx}
+                      href={attachment.url}
+                      download={attachment.name}
+                      className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-[#44485e] rounded text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-200 dark:hover:bg-[#4f5370] transition-colors"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      <span className="truncate flex-1">{attachment.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {(attachment.size / 1024).toFixed(1)} KB
+                      </span>
+                    </a>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Nested Replies */}
+        {replies.length > 0 && (
+          <div className="ml-8 mt-4 space-y-3 pl-4 border-l-2 border-gray-300 dark:border-[#44485e]">
+            {replies.map(reply => renderComment(reply, depth + 1))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   if (isLoading) {
     return <div className="p-4 text-center text-gray-500">Loading comments...</div>
   }
@@ -436,387 +655,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       {/* Comments List */}
       {comments.length > 0 && (
         <div className="p-4 space-y-4">
-          {comments.filter(c => !c.parentId).map((comment) => {
-            const createdAt = typeof comment.createdAt === 'string'
-              ? new Date(comment.createdAt)
-              : comment.createdAt
-            const isOwner = currentUserId === comment.authorId
-            const replies = comments.filter(c => c.parentId === comment.id)
-
-            return (
-              <div key={comment.id} className="pb-4 border-b-2 border-gray-200 dark:border-[#44485e] last:border-0">
-                <div className="flex items-center justify-between mb-2">
-                  <UserAvatar
-                    userId={comment.authorId}
-                    name={comment.authorName || undefined}
-                    email={comment.authorEmail || undefined}
-                    size="sm"
-                    showEmail={true}
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 dark:text-[#acabc1]">
-                      {formatDistanceToNow(createdAt, { addSuffix: true })}
-                    </span>
-                    {isOwner && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleEdit(comment.id, comment.content)}
-                            disabled={updateMutation.isLoading || editingId === comment.id}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(comment.id)}
-                            disabled={deleteMutation.isLoading}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                </div>
-
-                {/* Edit Mode */}
-                {editingId === comment.id ? (
-                  <div className="space-y-2">
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="bg-white dark:bg-[#2f3349] resize-none"
-                      rows={calculateRows(editContent)}
-                      disabled={updateMutation.isLoading}
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleUpdate(comment.id)}
-                        disabled={!editContent.trim() || updateMutation.isLoading}
-                        className="bg-[#7367f0] hover:bg-[#6658d3]"
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCancelEdit}
-                        disabled={updateMutation.isLoading}
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap pl-0">
-                      {comment.content}
-                    </p>
-
-                    {/* Action Bar */}
-                    <div className="flex items-center gap-1 mt-2">
-                      <div className="relative" ref={emotionPickerCommentId === comment.id ? emotionPickerRef : null}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`h-7 text-xs ${emotionPickerCommentId === comment.id ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
-                          onClick={() => setEmotionPickerCommentId(emotionPickerCommentId === comment.id ? null : comment.id)}
-                        >
-                          <Smile className="h-3.5 w-3.5 mr-1.5" />
-                          Emotion
-                        </Button>
-                        {emotionPickerCommentId === comment.id && (
-                          <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
-                            <div className="grid grid-cols-4 gap-2">
-                              {availableEmotions.map(emoji => (
-                                <button
-                                  key={emoji}
-                                  onClick={() => handleEmotionSelect(emoji, comment.id)}
-                                  className="text-lg hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-1 transition-colors"
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs text-gray-600 dark:text-[#acabc1]"
-                        onClick={() => handleReply(comment.id)}
-                      >
-                        <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
-                        Reply
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                {/* Inline Reply Form */}
-                {replyingToId === comment.id && (
-                  <div className="mt-3 space-y-2">
-                    <Textarea
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="Write a reply..."
-                      className="min-h-[60px] resize-none bg-white dark:bg-[#2f3349]"
-                      rows={2}
-                      autoFocus
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSubmitReply(comment.id)}
-                        disabled={!replyContent.trim() || createMutation.isLoading}
-                        className="bg-[#7367f0] hover:bg-[#6658d3]"
-                      >
-                        <Send className="h-4 w-4 mr-2" />
-                        Send
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCancelReply}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Attachments */}
-                {comment.attachments && comment.attachments.length > 0 && (
-                  <div className="mt-2 space-y-2">
-                    {/* Images */}
-                    {comment.attachments.filter((a: any) => a.type === 'image').length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {comment.attachments
-                          .filter((a: any) => a.type === 'image')
-                          .map((attachment: any, idx: number) => (
-                            <img
-                              key={idx}
-                              src={attachment.url}
-                              alt={attachment.name}
-                              className="max-w-xs rounded border border-gray-300 dark:border-[#44485e] cursor-pointer hover:opacity-90"
-                              onClick={() => window.open(attachment.url, '_blank')}
-                            />
-                          ))}
-                      </div>
-                    )}
-
-                    {/* Files */}
-                    {comment.attachments.filter((a: any) => a.type === 'file').length > 0 && (
-                      <div className="space-y-1">
-                        {comment.attachments
-                          .filter((a: any) => a.type === 'file')
-                          .map((attachment: any, idx: number) => (
-                            <a
-                              key={idx}
-                              href={attachment.url}
-                              download={attachment.name}
-                              className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-[#44485e] rounded text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-200 dark:hover:bg-[#4f5370] transition-colors"
-                            >
-                              <Paperclip className="h-4 w-4" />
-                              <span className="truncate flex-1">{attachment.name}</span>
-                              <span className="text-xs text-gray-500">
-                                {(attachment.size / 1024).toFixed(1)} KB
-                              </span>
-                            </a>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Replies */}
-                {replies.length > 0 && (
-                  <div className="ml-8 mt-4 space-y-3 pl-4 border-l-2 border-gray-300 dark:border-[#44485e]">
-                    {replies.map((reply) => {
-                      const replyCreatedAt = typeof reply.createdAt === 'string'
-                        ? new Date(reply.createdAt)
-                        : reply.createdAt
-                      const isReplyOwner = currentUserId === reply.authorId
-
-                      return (
-                        <div key={reply.id} className="pb-3 last:pb-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <UserAvatar
-                              userId={reply.authorId}
-                              name={reply.authorName || undefined}
-                              email={reply.authorEmail || undefined}
-                              size="sm"
-                              showEmail={true}
-                            />
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 dark:text-[#acabc1]">
-                                {formatDistanceToNow(replyCreatedAt, { addSuffix: true })}
-                              </span>
-                              {isReplyOwner && (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
-                                    >
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => handleEdit(reply.id, reply.content)}
-                                      disabled={updateMutation.isLoading || editingId === reply.id}
-                                    >
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDelete(reply.id)}
-                                      disabled={deleteMutation.isLoading}
-                                      className="text-red-600 focus:text-red-600"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Reply Edit Mode */}
-                          {editingId === reply.id ? (
-                            <div className="space-y-2">
-                              <Textarea
-                                value={editContent}
-                                onChange={(e) => setEditContent(e.target.value)}
-                                className="bg-white dark:bg-[#2f3349] resize-none"
-                                rows={calculateRows(editContent)}
-                                disabled={updateMutation.isLoading}
-                              />
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUpdate(reply.id)}
-                                  disabled={!editContent.trim() || updateMutation.isLoading}
-                                  className="bg-[#7367f0] hover:bg-[#6658d3]"
-                                >
-                                  <Check className="h-4 w-4 mr-2" />
-                                  Save
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={handleCancelEdit}
-                                  disabled={updateMutation.isLoading}
-                                >
-                                  <X className="h-4 w-4 mr-2" />
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap">
-                                {reply.content}
-                              </p>
-
-                              {/* Action Bar for Replies */}
-                              <div className="flex items-center gap-1 mt-2">
-                                <div className="relative" ref={emotionPickerCommentId === reply.id ? emotionPickerRef : null}>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className={`h-7 text-xs ${emotionPickerCommentId === reply.id ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
-                                    onClick={() => setEmotionPickerCommentId(emotionPickerCommentId === reply.id ? null : reply.id)}
-                                  >
-                                    <Smile className="h-3.5 w-3.5 mr-1.5" />
-                                    Emotion
-                                  </Button>
-                                  {emotionPickerCommentId === reply.id && (
-                                    <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
-                                      <div className="grid grid-cols-4 gap-2">
-                                        {availableEmotions.map(emoji => (
-                                          <button
-                                            key={emoji}
-                                            onClick={() => handleEmotionSelect(emoji, reply.id)}
-                                            className="text-lg hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-1 transition-colors"
-                                          >
-                                            {emoji}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 text-xs text-gray-600 dark:text-[#acabc1]"
-                                  onClick={() => handleReply(comment.id)}
-                                >
-                                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
-                                  Reply
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {/* Inline Reply Form at bottom of replies */}
-                {replyingToId === comment.id && replies.length > 0 && (
-                  <div className="ml-8 mt-3 pl-4 border-l-2 border-gray-300 dark:border-[#44485e] space-y-2">
-                    <Textarea
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="Write a reply..."
-                      className="min-h-[60px] resize-none bg-white dark:bg-[#2f3349]"
-                      rows={2}
-                      autoFocus
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSubmitReply(comment.id)}
-                        disabled={!replyContent.trim() || createMutation.isLoading}
-                        className="bg-[#7367f0] hover:bg-[#6658d3]"
-                      >
-                        <Send className="h-4 w-4 mr-2" />
-                        Send
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCancelReply}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+          {comments.filter(c => !c.parentId).map(comment => renderComment(comment, 0))}
         </div>
       )}
     </div>
