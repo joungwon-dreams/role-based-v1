@@ -151,7 +151,7 @@ export const DateTimePickerSimple = React.forwardRef<
 
         {isOpen && (
           <div className="absolute z-50 mt-2 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e]">
-            <SimpleCalendar value={value} onChange={handleDateChange} />
+            <SimpleCalendar value={value} onChange={handleDateChange} minDate={minDate} maxDate={maxDate} />
 
             {enableTime && (
               <div className="border-t border-gray-200 dark:border-[#44485e] p-4">

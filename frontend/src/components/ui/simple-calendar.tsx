@@ -18,9 +18,11 @@ interface SimpleCalendarProps {
   value?: Date | null
   onChange?: (date: Date) => void
   className?: string
+  minDate?: Date
+  maxDate?: Date
 }
 
-export function SimpleCalendar({ value, onChange, className }: SimpleCalendarProps) {
+export function SimpleCalendar({ value, onChange, className, minDate, maxDate }: SimpleCalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState(() => {
     return value ? new Date(value.getFullYear(), value.getMonth(), 1) : new Date()
   })
@@ -67,6 +69,7 @@ export function SimpleCalendar({ value, onChange, className }: SimpleCalendarPro
   }
 
   const handleDateClick = (day: number) => {
+    if (isDisabled(day)) return
     const selectedDate = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
@@ -95,6 +98,28 @@ export function SimpleCalendar({ value, onChange, className }: SimpleCalendarPro
     )
   }
 
+  const isDisabled = (day: number) => {
+    const date = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    )
+
+    if (minDate) {
+      const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())
+      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      if (dateOnly < minDateOnly) return true
+    }
+
+    if (maxDate) {
+      const maxDateOnly = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())
+      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      if (dateOnly > maxDateOnly) return true
+    }
+
+    return false
+  }
+
   // Generate calendar grid
   const calendarDays = []
 
@@ -105,21 +130,28 @@ export function SimpleCalendar({ value, onChange, className }: SimpleCalendarPro
 
   // Days of the month
   for (let day = 1; day <= daysInMonth; day++) {
+    const disabled = isDisabled(day)
     calendarDays.push(
       <button
         key={day}
         type="button"
         onClick={() => handleDateClick(day)}
+        disabled={disabled}
         className={cn(
           'h-8 w-8 rounded text-sm transition-colors',
-          'hover:bg-gray-100 dark:hover:bg-[#44485e]',
+          disabled
+            ? 'opacity-30 cursor-not-allowed text-gray-400 dark:text-gray-600'
+            : 'hover:bg-gray-100 dark:hover:bg-[#44485e]',
           isSelectedDate(day) &&
+            !disabled &&
             'bg-[#7367f0] text-white hover:bg-[#6658d3]',
           isToday(day) &&
             !isSelectedDate(day) &&
+            !disabled &&
             'border border-[#7367f0] text-[#7367f0]',
           !isSelectedDate(day) &&
             !isToday(day) &&
+            !disabled &&
             'text-gray-700 dark:text-gray-300'
         )}
       >

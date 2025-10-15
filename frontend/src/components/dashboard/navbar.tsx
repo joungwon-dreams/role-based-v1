@@ -55,7 +55,7 @@ export function Navbar() {
 
   const handleLogout = () => {
     logout()
-    window.location.href = '/signin'
+    window.location.href = '/'
   }
 
   return (
