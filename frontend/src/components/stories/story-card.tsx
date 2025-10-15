@@ -162,32 +162,49 @@ export function StoryCard({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-[#44485e]">
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`flex-1 ${liked ? 'text-red-500' : 'text-gray-600 dark:text-[#acabc1]'}`}
-          onClick={handleLike}
-        >
-          <Heart className={`h-4 w-4 mr-2 ${liked ? 'fill-current' : ''}`} />
-          Like
-        </Button>
-        <Button variant="ghost" size="sm" className="flex-1 text-gray-600 dark:text-[#acabc1]">
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Comment
-        </Button>
-        <Button variant="ghost" size="sm" className="flex-1 text-gray-600 dark:text-[#acabc1]">
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`px-2 ${saved ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
-          onClick={handleSave}
-        >
-          <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
-        </Button>
+      <div className="px-4 py-2 border-t border-gray-200 dark:border-[#44485e]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={liked ? 'text-red-500' : 'text-gray-600 dark:text-[#acabc1]'}
+              onClick={handleLike}
+            >
+              <Heart className={`h-4 w-4 mr-2 ${liked ? 'fill-current' : ''}`} />
+              Like
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-600 dark:text-[#acabc1]">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Comment
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-600 dark:text-[#acabc1]">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
+          <div className="flex items-center gap-1">
+            {isOwner && onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-[#7367f0] hover:text-[#6658d3]"
+                onClick={onEdit}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`px-2 ${saved ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
+              onClick={handleSave}
+            >
+              <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Status Badge for Drafts */}

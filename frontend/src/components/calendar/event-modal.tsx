@@ -13,7 +13,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetFooter,
+  SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { DateTimePickerSimple } from '@/components/ui/date-time-picker-simple'
-import { Trash2, X } from 'lucide-react'
+import { Trash2, X, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface EventModalProps {
@@ -144,41 +144,65 @@ export function EventModal({
     }
   }
 
+  const handleClose = () => {
+    onOpenChange(false)
+  }
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md overflow-y-auto bg-white dark:bg-[#2f3349]"
+        className="w-full sm:max-w-[540px] p-0 bg-white dark:bg-[#2f3349] border-gray-200 dark:border-[#44485e]"
       >
-        <form onSubmit={handleSubmit}>
-          <SheetHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
-            <SheetTitle className="text-lg font-semibold">
-              {isUpdateMode ? 'Update Event' : 'Add Event'}
-            </SheetTitle>
+        <form onSubmit={handleSubmit} className="h-full flex flex-col">
+          {/* Header */}
+          <SheetHeader className="px-6 py-5 border-b border-gray-200 dark:border-[#44485e]">
+            <div className="flex items-center justify-between">
+              <div>
+                <SheetTitle className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {isUpdateMode ? 'Update Event' : 'Add Event'}
+                </SheetTitle>
+                <SheetDescription className="text-sm text-gray-600 dark:text-[#acabc1] mt-1">
+                  {isUpdateMode ? 'Update your event details' : 'Create a new event on your calendar'}
+                </SheetDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </SheetHeader>
 
-          <div className="py-6 px-4 space-y-5">
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {/* Title */}
-            <div>
-              <Label htmlFor="title" className="text-sm font-medium mb-2 block">
-                Title <span className="text-red-500">*</span>
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-sm font-medium text-gray-900 dark:text-white">
+                Title *
               </Label>
               <Input
                 id="title"
                 placeholder="Event Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                className="bg-white dark:bg-[#2f3349]"
                 required
+                disabled={isLoading}
               />
             </div>
 
             {/* Label */}
-            <div>
-              <Label htmlFor="label" className="text-sm font-medium mb-2 block">
+            <div className="space-y-2">
+              <Label htmlFor="label" className="text-sm font-medium text-gray-900 dark:text-white">
                 Label
               </Label>
-              <Select value={label} onValueChange={setLabel}>
-                <SelectTrigger>
+              <Select value={label} onValueChange={setLabel} disabled={isLoading}>
+                <SelectTrigger className="bg-white dark:bg-[#2f3349]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,8 +219,8 @@ export function EventModal({
             </div>
 
             {/* Start Date & Time */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-900 dark:text-white">
                 Start Date {!allDay && '& Time'}
               </Label>
               <DateTimePickerSimple
@@ -204,12 +228,13 @@ export function EventModal({
                 onChange={setStartDateTime}
                 enableTime={!allDay}
                 placeholder={allDay ? 'Select start date' : 'Select start date & time'}
+                disabled={isLoading}
               />
             </div>
 
             {/* End Date & Time */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-900 dark:text-white">
                 End Date {!allDay && '& Time'}
               </Label>
               <DateTimePickerSimple
@@ -218,20 +243,31 @@ export function EventModal({
                 enableTime={!allDay}
                 placeholder={allDay ? 'Select end date' : 'Select end date & time'}
                 minDate={startDateTime || undefined}
+                disabled={isLoading}
               />
             </div>
 
             {/* All Day */}
-            <div className="flex items-center justify-between py-2">
-              <Label htmlFor="allDay" className="text-sm font-medium">
-                All Day
-              </Label>
-              <Switch id="allDay" checked={allDay} onCheckedChange={setAllDay} />
+            <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-[#44485e] bg-gray-50 dark:bg-[#25293c]">
+              <div className="flex-1">
+                <Label htmlFor="allDay" className="text-sm font-medium text-gray-900 dark:text-white">
+                  All Day Event
+                </Label>
+                <p className="text-xs text-gray-500 dark:text-[#acabc1] mt-1">
+                  Event lasts the entire day
+                </p>
+              </div>
+              <Switch
+                id="allDay"
+                checked={allDay}
+                onCheckedChange={setAllDay}
+                disabled={isLoading}
+              />
             </div>
 
             {/* Event URL */}
-            <div>
-              <Label htmlFor="url" className="text-sm font-medium mb-2 block">
+            <div className="space-y-2">
+              <Label htmlFor="url" className="text-sm font-medium text-gray-900 dark:text-white">
                 Event URL
               </Label>
               <Input
@@ -240,12 +276,14 @@ export function EventModal({
                 placeholder="https://example.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                className="bg-white dark:bg-[#2f3349]"
+                disabled={isLoading}
               />
             </div>
 
             {/* Guests */}
-            <div>
-              <Label htmlFor="guests" className="text-sm font-medium mb-2 block">
+            <div className="space-y-2">
+              <Label htmlFor="guests" className="text-sm font-medium text-gray-900 dark:text-white">
                 Guests
               </Label>
               <div className="flex gap-2 mb-2">
@@ -256,9 +294,15 @@ export function EventModal({
                   value={guestsInput}
                   onChange={(e) => setGuestsInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1"
+                  className="flex-1 bg-white dark:bg-[#2f3349]"
+                  disabled={isLoading}
                 />
-                <Button type="button" variant="outline" onClick={handleAddGuest}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddGuest}
+                  disabled={isLoading}
+                >
                   Add
                 </Button>
               </div>
@@ -284,8 +328,8 @@ export function EventModal({
             </div>
 
             {/* Location */}
-            <div>
-              <Label htmlFor="location" className="text-sm font-medium mb-2 block">
+            <div className="space-y-2">
+              <Label htmlFor="location" className="text-sm font-medium text-gray-900 dark:text-white">
                 Location
               </Label>
               <Input
@@ -293,12 +337,14 @@ export function EventModal({
                 placeholder="Event Location"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                className="bg-white dark:bg-[#2f3349]"
+                disabled={isLoading}
               />
             </div>
 
             {/* Description */}
-            <div>
-              <Label htmlFor="description" className="text-sm font-medium mb-2 block">
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium text-gray-900 dark:text-white">
                 Description
               </Label>
               <Textarea
@@ -307,36 +353,55 @@ export function EventModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
+                className="bg-white dark:bg-[#2f3349] resize-none"
+                disabled={isLoading}
               />
             </div>
           </div>
 
-          <SheetFooter className="flex-col sm:flex-row gap-2">
-            <div className="flex gap-2 flex-1">
-              <Button
-                type="submit"
-                className="flex-1 bg-[#7367f0] hover:bg-[#6658d3] text-white"
-                disabled={isLoading}
-              >
-                {isUpdateMode ? 'Update' : 'Add'}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-                Cancel
-              </Button>
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-[#44485e] bg-gray-50 dark:bg-[#25293c]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                {isUpdateMode && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onDelete}
+                    disabled={isLoading}
+                    className="border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-[#7367f0] hover:bg-[#6658d3] text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isUpdateMode ? 'Updating...' : 'Adding...'}
+                    </>
+                  ) : (
+                    <>{isUpdateMode ? 'Update Event' : 'Add Event'}</>
+                  )}
+                </Button>
+              </div>
             </div>
-            {isUpdateMode && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={onDelete}
-                disabled={isLoading}
-                className="w-full sm:w-auto"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
-            )}
-          </SheetFooter>
+          </div>
         </form>
       </SheetContent>
     </Sheet>
