@@ -1,12 +1,12 @@
 import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
 import { users } from '../core/users';
-import { posts } from './posts';
+import { stories } from './stories';
 
 export const comments = pgTable('comments', {
   id: uuid('id').primaryKey().defaultRandom(),
-  postId: uuid('post_id')
+  storyId: uuid('story_id')
     .notNull()
-    .references(() => posts.id, { onDelete: 'cascade' }),
+    .references(() => stories.id, { onDelete: 'cascade' }),
   authorId: uuid('author_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
