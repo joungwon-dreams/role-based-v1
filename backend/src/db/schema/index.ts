@@ -26,7 +26,7 @@ export * from './security/system-logs';
 // Feature tables
 export * from './features/profiles';
 export * from './features/calendar-events';
-export * from './features/posts';
+export * from './features/stories';
 export * from './features/comments';
 export * from './features/messages';
 export * from './features/connections';

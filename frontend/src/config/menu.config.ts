@@ -162,43 +162,43 @@ export const menuItems: MenuItem[] = [
     ],
   },
   {
-    key: 'posts',
-    titleKey: 'menu.posts.title',
+    key: 'stories',
+    titleKey: 'menu.stories.title',
     icon: FileText,
     minRoleLevel: 1,
-    requiredPermissions: ['post:view:own'],
+    requiredPermissions: ['story:view:own'],
     children: [
       {
-        key: 'posts_my',
-        titleKey: 'menu.posts.myPosts',
+        key: 'stories_my',
+        titleKey: 'menu.stories.myStories',
         icon: Edit,
-        path: '/posts',
+        path: '/stories',
         minRoleLevel: 1,
-        requiredPermissions: ['post:view:own'],
+        requiredPermissions: ['story:view:own'],
       },
       {
-        key: 'posts_create',
-        titleKey: 'menu.posts.create',
+        key: 'stories_create',
+        titleKey: 'menu.stories.create',
         icon: PenSquare,
-        path: '/posts/create',
+        path: '/stories/create',
         minRoleLevel: 1,
-        requiredPermissions: ['post:create:own'],
+        requiredPermissions: ['story:create:own'],
       },
       {
-        key: 'posts_drafts',
-        titleKey: 'menu.posts.drafts',
+        key: 'stories_drafts',
+        titleKey: 'menu.stories.drafts',
         icon: FileClock,
-        path: '/posts/drafts',
+        path: '/stories/drafts',
         minRoleLevel: 1,
-        requiredPermissions: ['post:view:own'],
+        requiredPermissions: ['story:view:own'],
       },
       {
-        key: 'posts_published',
-        titleKey: 'menu.posts.published',
+        key: 'stories_published',
+        titleKey: 'menu.stories.published',
         icon: FileCheck,
-        path: '/posts/published',
+        path: '/stories/published',
         minRoleLevel: 1,
-        requiredPermissions: ['post:view:own'],
+        requiredPermissions: ['story:view:own'],
       },
     ],
   },
@@ -475,35 +475,35 @@ export const menuItems: MenuItem[] = [
         ],
       },
       {
-        key: 'content_posts',
-        titleKey: 'menu.content.postsManagement',
+        key: 'content_stories',
+        titleKey: 'menu.content.storiesManagement',
         icon: FileText,
         minRoleLevel: 3,
-        requiredPermissions: ['post:manage:all'],
+        requiredPermissions: ['story:manage:all'],
         children: [
           {
-            key: 'content_posts_all',
-            titleKey: 'menu.content.allPosts',
+            key: 'content_stories_all',
+            titleKey: 'menu.content.allStories',
             icon: FileStack,
-            path: '/admin/posts',
+            path: '/admin/stories',
             minRoleLevel: 3,
-            requiredPermissions: ['post:manage:all'],
+            requiredPermissions: ['story:manage:all'],
           },
           {
-            key: 'content_posts_pending',
+            key: 'content_stories_pending',
             titleKey: 'menu.content.pendingReview',
             icon: FileClock,
-            path: '/admin/posts/pending',
+            path: '/admin/stories/pending',
             minRoleLevel: 3,
-            requiredPermissions: ['post:moderate:all'],
+            requiredPermissions: ['story:moderate:all'],
           },
           {
-            key: 'content_posts_reported',
-            titleKey: 'menu.content.reportedPosts',
+            key: 'content_stories_reported',
+            titleKey: 'menu.content.reportedStories',
             icon: AlertTriangle,
-            path: '/admin/posts/reported',
+            path: '/admin/stories/reported',
             minRoleLevel: 3,
-            requiredPermissions: ['post:moderate:all'],
+            requiredPermissions: ['story:moderate:all'],
           },
         ],
       },
@@ -931,6 +931,9 @@ export const menuItems: MenuItem[] = [
 
 /**
  * Filter menu items based on user's role level and permissions
+ *
+ * Role hierarchy: Superadmin (5) > Admin (4) > Premium (3) > User (2) > Guest (1)
+ * Higher roles inherit all permissions from lower roles automatically
  */
 export function filterMenuByRole(
   items: MenuItem[],
@@ -939,11 +942,18 @@ export function filterMenuByRole(
 ): MenuItem[] {
   return items
     .filter((item) => {
-      // Check role level
+      // Check role level - this is the primary filter
       if (item.minRoleLevel > userRoleLevel) return false;
 
       // Check permissions if required
+      // IMPORTANT: Superadmin (level 5) and Admin (level 4) bypass permission checks
+      // because they inherit all lower-level permissions
       if (item.requiredPermissions && item.requiredPermissions.length > 0) {
+        // Superadmin and Admin roles have all permissions by design
+        if (userRoleLevel >= 4) {
+          return true; // Skip permission check for Admin and Superadmin
+        }
+
         const hasPermission = item.requiredPermissions.some((perm) =>
           userPermissions.includes(perm)
         );
