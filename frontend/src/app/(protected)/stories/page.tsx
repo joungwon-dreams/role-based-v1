@@ -14,7 +14,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Plus, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { trpc } from '@/lib/trpc/react'
@@ -30,9 +30,20 @@ export default function StoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedStory, setSelectedStory] = useState<any>(null)
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
 
-  // Get current user ID from auth store
-  const currentUserId = authStore.getState().user?.userId
+  // Subscribe to auth store changes
+  useEffect(() => {
+    // Initialize with current user
+    setCurrentUserId(authStore.getState().user?.userId)
+
+    // Subscribe to changes
+    const unsubscribe = authStore.subscribe(() => {
+      setCurrentUserId(authStore.getState().user?.userId)
+    })
+
+    return unsubscribe
+  }, [])
 
   // tRPC queries and mutations
   const { data: stories = [], refetch } = trpc.stories.list.useQuery(

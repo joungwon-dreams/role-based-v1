@@ -28,8 +28,16 @@ class AuthStore {
 
     if (userStr) {
       try {
+        const userData = JSON.parse(userStr);
+        // Map 'id' to 'userId' for backwards compatibility
         this.state = {
-          user: JSON.parse(userStr),
+          user: {
+            userId: userData.id || userData.userId,
+            email: userData.email,
+            name: userData.name,
+            roles: userData.roles,
+            permissions: userData.permissions,
+          },
         };
       } catch (error) {
         // Invalid user data, clear it
