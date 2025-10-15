@@ -8,7 +8,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Trash2, Send, Image, Paperclip, Smile, Edit, X, Check, MoreHorizontal } from 'lucide-react'
+import { Trash2, Send, Image, Paperclip, Smile, Edit, X, Check, MoreHorizontal, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -35,6 +35,8 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null)
+  const [replyContent, setReplyContent] = useState('')
   const emojiPickerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -54,9 +56,11 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       setNewComment('')
       setSelectedImages([])
       setSelectedFiles([])
+      setReplyingTo(null)
+      setReplyContent('')
       utils.comments.list.invalidate({ storyId })
       utils.comments.getCount.invalidate({ storyId })
-      toast.success('Comment added!')
+      toast.success(replyingTo ? 'Reply added!' : 'Comment added!')
     },
     onError: (error) => {
       toast.error('Failed to add comment: ' + error.message)
@@ -126,6 +130,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       storyId,
       content: newComment,
       attachments: attachments.length > 0 ? attachments : undefined,
+      parentId: replyingTo?.id,
     })
   }
 
@@ -167,6 +172,17 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     if (confirm('Are you sure you want to delete this comment?')) {
       deleteMutation.mutate({ id: commentId })
     }
+  }
+
+  const handleReply = (commentId: string, authorName: string) => {
+    setReplyingTo({ id: commentId, authorName })
+    setNewComment(`@${authorName} `)
+    textareaRef.current?.focus()
+  }
+
+  const handleCancelReply = () => {
+    setReplyingTo(null)
+    setNewComment('')
   }
 
   const handleEmojiSelect = (emoji: string) => {
@@ -254,11 +270,29 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     <div className="border-t border-gray-200 dark:border-[#44485e] bg-gray-100 dark:bg-[#25293c]">
       {/* Add Comment Form */}
       <form onSubmit={handleSubmit} className="p-4">
+        {/* Replying To Banner */}
+        {replyingTo && (
+          <div className="mb-2 flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-[#44485e] rounded text-sm">
+            <span className="text-blue-700 dark:text-blue-300">
+              Replying to <span className="font-semibold">@{replyingTo.authorName}</span>
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelReply}
+              className="h-6 w-6 p-0 text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         <Textarea
           ref={textareaRef}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Write a comment..."
+          placeholder={replyingTo ? `Reply to @${replyingTo.authorName}...` : "Write a comment..."}
           className="min-h-[60px] max-h-[60px] resize-none bg-white dark:bg-[#2f3349] overflow-y-auto"
           rows={2}
           disabled={createMutation.isLoading}
@@ -388,11 +422,12 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       {/* Comments List */}
       {comments.length > 0 && (
         <div className="p-4 space-y-4">
-          {comments.map((comment) => {
+          {comments.filter(c => !c.parentId).map((comment) => {
             const createdAt = typeof comment.createdAt === 'string'
               ? new Date(comment.createdAt)
               : comment.createdAt
             const isOwner = currentUserId === comment.authorId
+            const replies = comments.filter(c => c.parentId === comment.id)
 
             return (
               <div key={comment.id} className="pb-4 border-b-2 border-gray-200 dark:border-[#44485e] last:border-0">
@@ -408,36 +443,44 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                     <span className="text-xs text-gray-500 dark:text-[#acabc1]">
                       {formatDistanceToNow(createdAt, { addSuffix: true })}
                     </span>
-                    {isOwner && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleEdit(comment.id, comment.content)}
-                            disabled={updateMutation.isLoading || editingId === comment.id}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(comment.id)}
-                            disabled={deleteMutation.isLoading}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleReply(comment.id, comment.authorName || 'User')}
+                        >
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Reply
+                        </DropdownMenuItem>
+                        {isOwner && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleEdit(comment.id, comment.content)}
+                              disabled={updateMutation.isLoading || editingId === comment.id}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(comment.id)}
+                              disabled={deleteMutation.isLoading}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -519,6 +562,104 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                           ))}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Replies */}
+                {replies.length > 0 && (
+                  <div className="ml-8 mt-4 space-y-3 pl-4 border-l-2 border-gray-300 dark:border-[#44485e]">
+                    {replies.map((reply) => {
+                      const replyCreatedAt = typeof reply.createdAt === 'string'
+                        ? new Date(reply.createdAt)
+                        : reply.createdAt
+                      const isReplyOwner = currentUserId === reply.authorId
+
+                      return (
+                        <div key={reply.id} className="pb-3 last:pb-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <UserAvatar
+                              userId={reply.authorId}
+                              name={reply.authorName || undefined}
+                              email={reply.authorEmail || undefined}
+                              size="sm"
+                              showEmail={true}
+                            />
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500 dark:text-[#acabc1]">
+                                {formatDistanceToNow(replyCreatedAt, { addSuffix: true })}
+                              </span>
+                              {isReplyOwner && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleEdit(reply.id, reply.content)}
+                                      disabled={updateMutation.isLoading || editingId === reply.id}
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDelete(reply.id)}
+                                      disabled={deleteMutation.isLoading}
+                                      className="text-red-600 focus:text-red-600"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Reply Edit Mode */}
+                          {editingId === reply.id ? (
+                            <div className="space-y-2">
+                              <Textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                className="bg-white dark:bg-[#2f3349] resize-none"
+                                rows={calculateRows(editContent)}
+                                disabled={updateMutation.isLoading}
+                              />
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdate(reply.id)}
+                                  disabled={!editContent.trim() || updateMutation.isLoading}
+                                  className="bg-[#7367f0] hover:bg-[#6658d3]"
+                                >
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  disabled={updateMutation.isLoading}
+                                >
+                                  <X className="h-4 w-4 mr-2" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap">
+                              {reply.content}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
