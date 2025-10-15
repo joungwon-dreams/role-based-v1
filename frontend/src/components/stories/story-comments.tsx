@@ -44,6 +44,8 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
   const createMutation = trpc.comments.create.useMutation({
     onSuccess: () => {
       setNewComment('')
+      setSelectedImages([])
+      setSelectedFiles([])
       utils.comments.list.invalidate({ storyId })
       utils.comments.getCount.invalidate({ storyId })
       toast.success('Comment added!')
@@ -65,10 +67,54 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     },
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) return
-    createMutation.mutate({ storyId, content: newComment })
+
+    // Convert files to base64
+    const attachments: Array<{
+      type: 'image' | 'file'
+      url: string
+      name: string
+      size: number
+    }> = []
+
+    // Convert images to base64
+    for (const img of selectedImages) {
+      const base64 = await fileToBase64(img)
+      attachments.push({
+        type: 'image',
+        url: base64,
+        name: img.name,
+        size: img.size,
+      })
+    }
+
+    // Convert files to base64
+    for (const file of selectedFiles) {
+      const base64 = await fileToBase64(file)
+      attachments.push({
+        type: 'file',
+        url: base64,
+        name: file.name,
+        size: file.size,
+      })
+    }
+
+    createMutation.mutate({
+      storyId,
+      content: newComment,
+      attachments: attachments.length > 0 ? attachments : undefined,
+    })
+  }
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
   }
 
   const handleDelete = (commentId: string) => {
@@ -332,6 +378,50 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                 <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap pl-0">
                   {comment.content}
                 </p>
+
+                {/* Attachments */}
+                {comment.attachments && comment.attachments.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {/* Images */}
+                    {comment.attachments.filter((a: any) => a.type === 'image').length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {comment.attachments
+                          .filter((a: any) => a.type === 'image')
+                          .map((attachment: any, idx: number) => (
+                            <img
+                              key={idx}
+                              src={attachment.url}
+                              alt={attachment.name}
+                              className="max-w-xs rounded border border-gray-300 dark:border-[#44485e] cursor-pointer hover:opacity-90"
+                              onClick={() => window.open(attachment.url, '_blank')}
+                            />
+                          ))}
+                      </div>
+                    )}
+
+                    {/* Files */}
+                    {comment.attachments.filter((a: any) => a.type === 'file').length > 0 && (
+                      <div className="space-y-1">
+                        {comment.attachments
+                          .filter((a: any) => a.type === 'file')
+                          .map((attachment: any, idx: number) => (
+                            <a
+                              key={idx}
+                              href={attachment.url}
+                              download={attachment.name}
+                              className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-[#44485e] rounded text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-200 dark:hover:bg-[#4f5370] transition-colors"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                              <span className="truncate flex-1">{attachment.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {(attachment.size / 1024).toFixed(1)} KB
+                              </span>
+                            </a>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}

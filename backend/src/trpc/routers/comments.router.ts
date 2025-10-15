@@ -41,6 +41,12 @@ export const commentsRouter = router({
         authorName: author?.name || null,
         authorEmail: author?.email || null,
         content: comment.content,
+        attachments: comment.attachments as Array<{
+          type: 'image' | 'file';
+          url: string;
+          name: string;
+          size: number;
+        }> | null,
         parentId: comment.parentId,
         createdAt: comment.createdAt,
         updatedAt: comment.updatedAt,
@@ -74,6 +80,16 @@ export const commentsRouter = router({
         storyId: z.string().uuid(),
         content: z.string().min(1, 'Comment cannot be empty'),
         parentId: z.string().uuid().optional(),
+        attachments: z
+          .array(
+            z.object({
+              type: z.enum(['image', 'file']),
+              url: z.string(),
+              name: z.string(),
+              size: z.number(),
+            })
+          )
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -84,6 +100,7 @@ export const commentsRouter = router({
           authorId: ctx.user.userId,
           content: input.content,
           parentId: input.parentId || null,
+          attachments: input.attachments || null,
         })
         .returning();
 
@@ -92,6 +109,7 @@ export const commentsRouter = router({
         storyId: newComment.storyId,
         authorId: newComment.authorId,
         content: newComment.content,
+        attachments: newComment.attachments,
         parentId: newComment.parentId,
         createdAt: newComment.createdAt,
         updatedAt: newComment.updatedAt,
