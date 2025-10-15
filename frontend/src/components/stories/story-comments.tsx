@@ -77,7 +77,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
   return (
     <div className="border-t border-gray-200 dark:border-[#44485e] bg-gray-100 dark:bg-[#25293c]">
       {/* Add Comment Form */}
-      <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-[#2f3349]">
+      <form onSubmit={handleSubmit} className="p-4">
         <div className="relative">
           <Textarea
             value={newComment}
