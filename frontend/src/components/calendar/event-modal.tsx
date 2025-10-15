@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { DateTimePicker } from '@/components/ui/date-time-picker'
+import { DateTimePickerSimple } from '@/components/ui/date-time-picker-simple'
 import { Trash2, X } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -157,7 +157,7 @@ export function EventModal({
             </SheetTitle>
           </SheetHeader>
 
-          <div className="py-6 space-y-5">
+          <div className="py-6 px-4 space-y-5">
             {/* Title */}
             <div>
               <Label htmlFor="title" className="text-sm font-medium mb-2 block">
@@ -199,7 +199,7 @@ export function EventModal({
               <Label className="text-sm font-medium mb-2 block">
                 Start Date {!allDay && '& Time'}
               </Label>
-              <DateTimePicker
+              <DateTimePickerSimple
                 value={startDateTime}
                 onChange={setStartDateTime}
                 enableTime={!allDay}
@@ -212,7 +212,7 @@ export function EventModal({
               <Label className="text-sm font-medium mb-2 block">
                 End Date {!allDay && '& Time'}
               </Label>
-              <DateTimePicker
+              <DateTimePickerSimple
                 value={endDateTime}
                 onChange={setEndDateTime}
                 enableTime={!allDay}
