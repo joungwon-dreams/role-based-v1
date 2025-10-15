@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { DateTimePicker } from '@/components/ui/date-time-picker'
 import { Trash2, X } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -56,10 +57,8 @@ export function EventModal({
   // Form state
   const [title, setTitle] = useState('')
   const [label, setLabel] = useState('Business')
-  const [startDate, setStartDate] = useState('')
-  const [startTime, setStartTime] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [endTime, setEndTime] = useState('')
+  const [startDateTime, setStartDateTime] = useState<Date | null>(null)
+  const [endDateTime, setEndDateTime] = useState<Date | null>(null)
   const [allDay, setAllDay] = useState(false)
   const [url, setUrl] = useState('')
   const [location, setLocation] = useState('')
@@ -79,22 +78,21 @@ export function EventModal({
       setGuests(event.guests || [])
 
       if (event.start) {
-        const start = new Date(event.start)
-        setStartDate(format(start, 'yyyy-MM-dd'))
-        setStartTime(format(start, 'HH:mm'))
+        setStartDateTime(new Date(event.start))
       }
 
       if (event.end) {
-        const end = new Date(event.end)
-        setEndDate(format(end, 'yyyy-MM-dd'))
-        setEndTime(format(end, 'HH:mm'))
+        setEndDateTime(new Date(event.end))
       }
     } else if (defaultDate) {
-      const date = format(defaultDate, 'yyyy-MM-dd')
-      setStartDate(date)
-      setEndDate(date)
-      setStartTime('09:00')
-      setEndTime('10:00')
+      // Set default times (9 AM to 10 AM)
+      const start = new Date(defaultDate)
+      start.setHours(9, 0, 0, 0)
+      const end = new Date(defaultDate)
+      end.setHours(10, 0, 0, 0)
+
+      setStartDateTime(start)
+      setEndDateTime(end)
       setTitle('')
       setLabel('Business')
       setAllDay(false)
@@ -108,24 +106,15 @@ export function EventModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!title.trim()) {
+    if (!title.trim() || !startDateTime || !endDateTime) {
       return
     }
-
-    // Construct start and end datetime
-    const start = allDay
-      ? new Date(startDate)
-      : new Date(`${startDate}T${startTime}`)
-
-    const end = allDay
-      ? new Date(endDate)
-      : new Date(`${endDate}T${endTime}`)
 
     const eventData = {
       title: title.trim(),
       label,
-      start: start.toISOString(),
-      end: end.toISOString(),
+      start: startDateTime.toISOString(),
+      end: endDateTime.toISOString(),
       allDay,
       url: url.trim() || undefined,
       location: location.trim() || undefined,
@@ -207,48 +196,29 @@ export function EventModal({
 
             {/* Start Date & Time */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Start Date</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="flex-1"
-                  required
-                />
-                {!allDay && (
-                  <Input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-32"
-                    required
-                  />
-                )}
-              </div>
+              <Label className="text-sm font-medium mb-2 block">
+                Start Date {!allDay && '& Time'}
+              </Label>
+              <DateTimePicker
+                value={startDateTime}
+                onChange={setStartDateTime}
+                enableTime={!allDay}
+                placeholder={allDay ? 'Select start date' : 'Select start date & time'}
+              />
             </div>
 
             {/* End Date & Time */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">End Date</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="flex-1"
-                  required
-                />
-                {!allDay && (
-                  <Input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-32"
-                    required
-                  />
-                )}
-              </div>
+              <Label className="text-sm font-medium mb-2 block">
+                End Date {!allDay && '& Time'}
+              </Label>
+              <DateTimePicker
+                value={endDateTime}
+                onChange={setEndDateTime}
+                enableTime={!allDay}
+                placeholder={allDay ? 'Select end date' : 'Select end date & time'}
+                minDate={startDateTime || undefined}
+              />
             </div>
 
             {/* All Day */}
