@@ -38,11 +38,8 @@
       "edit": "Edit Profile",
       "settings": "Settings"
     },
-    "calendar": {
-      "title": "Calendar",
-      "myCalendar": "My Calendar",
-      "events": "Events"
-    },
+    "calendar": "Calendar",
+    "stories": "Stories",
     "posts": {
       "title": "Posts",
       "myPosts": "My Posts",

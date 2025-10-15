@@ -38,11 +38,8 @@
       "edit": "프로필 수정",
       "settings": "설정"
     },
-    "calendar": {
-      "title": "캘린더",
-      "myCalendar": "내 캘린더",
-      "events": "이벤트"
-    },
+    "calendar": "캘린더",
+    "stories": "스토리",
     "posts": {
       "title": "게시물",
       "myPosts": "내 게시물",
