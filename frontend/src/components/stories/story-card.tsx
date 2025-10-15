@@ -18,11 +18,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
+import { UserAvatar } from '@/components/common/user-avatar'
 
 interface StoryCardProps {
   story: {
     id: string
     authorId: string
+    authorName?: string
+    authorEmail?: string
     title: string
     content: string
     isPublished: boolean
@@ -68,15 +71,17 @@ export function StoryCard({
       {/* Header - Author Info */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-[#44485e]">
         <div className="flex items-center gap-3">
-          {/* Avatar */}
-          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-[#7367f0] to-[#9e95f5] flex items-center justify-center text-white font-semibold">
-            {story.authorId.charAt(0).toUpperCase()}
-          </div>
+          <UserAvatar
+            userId={story.authorId}
+            name={story.authorName}
+            email={story.authorEmail}
+            size="md"
+            showEmail={false}
+          />
 
-          {/* Author Info */}
-          <div>
+          {/* Metadata */}
+          <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">Author Name</p>
               {isOwner && (
                 <Badge
                   variant="outline"

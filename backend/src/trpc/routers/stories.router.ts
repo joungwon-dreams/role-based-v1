@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
-import { stories } from '../../db/schema/index';
+import { stories, users } from '../../db/schema/index';
 import { eq, and, desc } from 'drizzle-orm';
 
 const storySchema = z.object({
@@ -44,20 +44,30 @@ export const storiesRouter = router({
       }
 
       const allStories = await ctx.db
-        .select()
+        .select({
+          story: stories,
+          author: {
+            id: users.id,
+            name: users.name,
+            email: users.email,
+          },
+        })
         .from(stories)
+        .leftJoin(users, eq(stories.authorId, users.id))
         .where(whereConditions)
         .orderBy(desc(stories.createdAt));
 
       // For 'all' filter, show published + user's own stories
       const filteredStories =
         filter === 'all'
-          ? allStories.filter((story) => story.isPublished || story.authorId === ctx.user.userId)
+          ? allStories.filter((item) => item.story.isPublished || item.story.authorId === ctx.user.userId)
           : allStories;
 
-      return filteredStories.map((story) => ({
+      return filteredStories.map(({ story, author }) => ({
         id: story.id,
         authorId: story.authorId,
+        authorName: author?.name || null,
+        authorEmail: author?.email || null,
         title: story.title,
         content: story.content,
         slug: story.slug,
