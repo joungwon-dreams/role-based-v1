@@ -19,6 +19,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { UserAvatar } from '@/components/common/user-avatar'
+import { trpc } from '@/lib/trpc/react'
+import { toast } from 'sonner'
+import { StoryComments } from './story-comments'
 
 interface StoryCardProps {
   story: {
@@ -46,17 +49,45 @@ export function StoryCard({
   onDelete,
   onTogglePublish,
 }: StoryCardProps) {
-  const [liked, setLiked] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [likesCount, setLikesCount] = useState(0)
-  const [commentsCount, setCommentsCount] = useState(0)
+  const [showComments, setShowComments] = useState(false)
 
   const isOwner = currentUserId === story.authorId
   const createdAt = typeof story.createdAt === 'string' ? new Date(story.createdAt) : story.createdAt
 
+  // Fetch like status
+  const { data: isLiked = false } = trpc.likes.isLiked.useQuery(
+    { storyId: story.id },
+    { enabled: !!story.id }
+  )
+
+  // Fetch like count
+  const { data: likesCount = 0 } = trpc.likes.getCount.useQuery(
+    { storyId: story.id },
+    { enabled: !!story.id }
+  )
+
+  // Fetch comment count
+  const { data: commentsCount = 0 } = trpc.comments.getCount.useQuery(
+    { storyId: story.id },
+    { enabled: !!story.id }
+  )
+
+  // Like toggle mutation
+  const utils = trpc.useContext()
+  const likeMutation = trpc.likes.toggle.useMutation({
+    onSuccess: () => {
+      // Invalidate queries to refetch data
+      utils.likes.isLiked.invalidate({ storyId: story.id })
+      utils.likes.getCount.invalidate({ storyId: story.id })
+    },
+    onError: (error) => {
+      toast.error('Failed to update like: ' + error.message)
+    },
+  })
+
   const handleLike = () => {
-    setLiked(!liked)
-    setLikesCount(liked ? likesCount - 1 : likesCount + 1)
+    likeMutation.mutate({ storyId: story.id })
   }
 
   const handleSave = () => {
@@ -173,13 +204,19 @@ export function StoryCard({
             <Button
               variant="ghost"
               size="sm"
-              className={liked ? 'text-red-500' : 'text-gray-600 dark:text-[#acabc1]'}
+              className={isLiked ? 'text-red-500' : 'text-gray-600 dark:text-[#acabc1]'}
               onClick={handleLike}
+              disabled={likeMutation.isLoading}
             >
-              <Heart className={`h-4 w-4 mr-2 ${liked ? 'fill-current' : ''}`} />
+              <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
               Like
             </Button>
-            <Button variant="ghost" size="sm" className="text-gray-600 dark:text-[#acabc1]">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={showComments ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}
+              onClick={() => setShowComments(!showComments)}
+            >
               <MessageCircle className="h-4 w-4 mr-2" />
               Comment
             </Button>
@@ -220,6 +257,9 @@ export function StoryCard({
           </Badge>
         </div>
       )}
+
+      {/* Comments Section */}
+      {showComments && <StoryComments storyId={story.id} currentUserId={currentUserId} />}
     </div>
   )
 }

@@ -5,6 +5,8 @@ import { roleRouter } from './role.router';
 import { permissionRouter } from './permission.router';
 import { calendarRouter } from './calendar.router';
 import { storiesRouter } from './stories.router';
+import { likesRouter } from './likes.router';
+import { commentsRouter } from './comments.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -13,6 +15,8 @@ export const appRouter = router({
   permission: permissionRouter,
   calendar: calendarRouter,
   stories: storiesRouter,
+  likes: likesRouter,
+  comments: commentsRouter,
 });
 
 export type AppRouter = typeof appRouter;

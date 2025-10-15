@@ -282,6 +282,7 @@ export default function CalendarPage() {
                   eventClick={handleEventClick}
                   eventDrop={handleEventDrop}
                   height="auto"
+                  displayEventTime={false}
                   eventClassNames={(arg) => {
                     const label = arg.event.extendedProps?.label || 'Business'
                     return [`event-${label.toLowerCase()}`]

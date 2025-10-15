@@ -15,11 +15,21 @@ export const trpcClient = createTRPCClient<AppRouter>({
           return {};
         }
 
+        const headers: Record<string, string> = {};
+
+        // Get accessToken from localStorage (fallback for cross-origin development)
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
         // Get CSRF token from localStorage for Double Submit Cookie pattern
         const csrfToken = localStorage.getItem('csrfToken');
+        if (csrfToken) {
+          headers['X-CSRF-Token'] = csrfToken;
+        }
 
-        // Return CSRF token in custom header for backend validation
-        return csrfToken ? { 'X-CSRF-Token': csrfToken } : {};
+        return headers;
       },
       transformer: superjson,
     }),

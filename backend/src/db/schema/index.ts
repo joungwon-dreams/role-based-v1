@@ -27,6 +27,7 @@ export * from './security/system-logs';
 export * from './features/profiles';
 export * from './features/calendar-events';
 export * from './features/stories';
+export * from './features/likes';
 export * from './features/comments';
 export * from './features/messages';
 export * from './features/connections';

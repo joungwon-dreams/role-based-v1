@@ -31,8 +31,10 @@ export function useRoleBasedMenu(): MenuItem[] {
     const roleMap: Record<string, RoleLevel> = {
       'guest': RoleLevel.GUEST,
       'user': RoleLevel.USER,
+      'premium': RoleLevel.PREMIUM,
       'premium_user': RoleLevel.PREMIUM,
       'admin': RoleLevel.ADMIN,
+      'superadmin': RoleLevel.SUPER_ADMIN,  // Backend uses 'superadmin' (no underscore)
       'super_admin': RoleLevel.SUPER_ADMIN,
     }
 
