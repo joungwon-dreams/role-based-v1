@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { Trash2, Send, Image, Paperclip, Smile } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,13 @@ interface StoryCommentsProps {
 
 export function StoryComments({ storyId, currentUserId, currentUserName, currentUserEmail }: StoryCommentsProps) {
   const [newComment, setNewComment] = useState('')
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [selectedImages, setSelectedImages] = useState<File[]>([])
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch comments
   const { data: comments = [], isLoading } = trpc.comments.list.useQuery(
@@ -70,6 +77,83 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     }
   }
 
+  const handleEmojiSelect = (emoji: string) => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const text = newComment
+      const before = text.substring(0, start)
+      const after = text.substring(end)
+      setNewComment(before + emoji + after)
+
+      // Set cursor position after emoji
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + emoji.length
+        textarea.focus()
+      }, 0)
+    } else {
+      setNewComment(newComment + emoji)
+    }
+    setShowEmojiPicker(false)
+  }
+
+  // Click outside to close emoji picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false)
+      }
+    }
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showEmojiPicker])
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+    setSelectedImages(prev => [...prev, ...imageFiles])
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setSelectedFiles(prev => [...prev, ...files])
+  }
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const availableEmojis = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣',
+    '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰',
+    '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜',
+    '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏',
+    '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
+    '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠',
+    '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨',
+    '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥',
+    '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧',
+    '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐',
+    '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑',
+    '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻',
+    '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸',
+    '👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️',
+    '🤟', '🤘', '👌', '🤌', '🤏', '👈', '👉', '👆',
+    '🙏', '✋', '🤚', '🖐️', '🖖', '👋', '🤙', '💪',
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
+    '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
+    '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🥈', '🥉',
+    '⭐', '🌟', '✨', '💫', '🔥', '💯', '✅', '❌',
+  ]
+
   if (isLoading) {
     return <div className="p-4 text-center text-gray-500">Loading comments...</div>
   }
@@ -79,6 +163,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       {/* Add Comment Form */}
       <form onSubmit={handleSubmit} className="p-4">
         <Textarea
+          ref={textareaRef}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
@@ -86,14 +171,74 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
           rows={2}
           disabled={createMutation.isLoading}
         />
+
+        {/* Image/File Previews */}
+        {(selectedImages.length > 0 || selectedFiles.length > 0) && (
+          <div className="mt-2 space-y-2">
+            {selectedImages.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedImages.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={URL.createObjectURL(img)}
+                      alt={img.name}
+                      className="h-16 w-16 object-cover rounded border border-gray-300 dark:border-[#44485e]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedFiles.length > 0 && (
+              <div className="space-y-1">
+                {selectedFiles.map((file, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-[#44485e] rounded text-sm">
+                    <span className="truncate flex-1 text-gray-700 dark:text-[#acabc1]">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(idx)}
+                      className="ml-2 text-red-500 hover:text-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+
         <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
               title="Upload image"
+              onClick={() => imageInputRef.current?.click()}
             >
               <Image className="h-5 w-5" />
             </Button>
@@ -103,18 +248,38 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
               size="sm"
               className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
               title="Attach file"
+              onClick={() => fileInputRef.current?.click()}
             >
               <Paperclip className="h-5 w-5" />
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
-              title="Add emoji"
-            >
-              <Smile className="h-5 w-5" />
-            </Button>
+            <div className="relative" ref={emojiPickerRef}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={`h-8 w-8 p-0 ${showEmojiPicker ? 'text-[#7367f0]' : 'text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white'}`}
+                title="Add emoji"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2f3349] rounded-lg shadow-xl border border-gray-200 dark:border-[#44485e] p-3 z-50 w-[320px] max-h-[300px] overflow-y-auto">
+                  <div className="grid grid-cols-8 gap-1">
+                    {availableEmojis.map((emoji, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleEmojiSelect(emoji)}
+                        className="text-2xl hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-1 transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <Button
             type="submit"
