@@ -157,10 +157,15 @@ export function EventModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md overflow-y-auto bg-white dark:bg-[#2f3349]"
+      >
         <form onSubmit={handleSubmit}>
-          <SheetHeader>
-            <SheetTitle>{isUpdateMode ? 'Update Event' : 'Add Event'}</SheetTitle>
+          <SheetHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <SheetTitle className="text-lg font-semibold">
+              {isUpdateMode ? 'Update Event' : 'Add Event'}
+            </SheetTitle>
           </SheetHeader>
 
           <div className="py-6 space-y-5">
