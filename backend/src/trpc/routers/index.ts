@@ -6,6 +6,7 @@ import { permissionRouter } from './permission.router';
 import { calendarRouter } from './calendar.router';
 import { storiesRouter } from './stories.router';
 import { likesRouter } from './likes.router';
+import { reactionsRouter } from './reactions.router';
 import { commentsRouter } from './comments.router';
 
 export const appRouter = router({
@@ -16,6 +17,7 @@ export const appRouter = router({
   calendar: calendarRouter,
   stories: storiesRouter,
   likes: likesRouter,
+  reactions: reactionsRouter,
   comments: commentsRouter,
 });
 

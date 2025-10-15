@@ -28,6 +28,7 @@ export * from './features/profiles';
 export * from './features/calendar-events';
 export * from './features/stories';
 export * from './features/likes';
+export * from './features/reactions';
 export * from './features/comments';
 export * from './features/messages';
 export * from './features/connections';

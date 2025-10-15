@@ -6,8 +6,8 @@
 
 'use client'
 
-import { useState } from 'react'
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Edit, Trash2, Globe, Lock } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Edit, Trash2, Globe, Lock, Smile } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,6 +37,8 @@ interface StoryCardProps {
     updatedAt: Date | string
   }
   currentUserId?: string
+  currentUserName?: string
+  currentUserEmail?: string
   onEdit?: () => void
   onDelete?: () => void
   onTogglePublish?: () => void
@@ -45,12 +47,16 @@ interface StoryCardProps {
 export function StoryCard({
   story,
   currentUserId,
+  currentUserName,
+  currentUserEmail,
   onEdit,
   onDelete,
   onTogglePublish,
 }: StoryCardProps) {
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
+  const [showEmotionPicker, setShowEmotionPicker] = useState(false)
+  const emotionPickerRef = useRef<HTMLDivElement>(null)
 
   const isOwner = currentUserId === story.authorId
   const createdAt = typeof story.createdAt === 'string' ? new Date(story.createdAt) : story.createdAt
@@ -73,6 +79,19 @@ export function StoryCard({
     { enabled: !!story.id }
   )
 
+  // Fetch reactions
+  const { data: reactions = [] } = trpc.reactions.list.useQuery(
+    { storyId: story.id },
+    { enabled: !!story.id }
+  )
+
+  // Auto-expand comments if there are any
+  useEffect(() => {
+    if (commentsCount > 0) {
+      setShowComments(true)
+    }
+  }, [commentsCount])
+
   // Like toggle mutation
   const utils = trpc.useContext()
   const likeMutation = trpc.likes.toggle.useMutation({
@@ -86,6 +105,17 @@ export function StoryCard({
     },
   })
 
+  // Reaction toggle mutation
+  const reactionMutation = trpc.reactions.toggle.useMutation({
+    onSuccess: () => {
+      // Invalidate reactions query to refetch data
+      utils.reactions.list.invalidate({ storyId: story.id })
+    },
+    onError: (error) => {
+      toast.error('Failed to update reaction: ' + error.message)
+    },
+  })
+
   const handleLike = () => {
     likeMutation.mutate({ storyId: story.id })
   }
@@ -93,6 +123,27 @@ export function StoryCard({
   const handleSave = () => {
     setSaved(!saved)
   }
+
+  const handleEmotionSelect = (emoji: string) => {
+    reactionMutation.mutate({ storyId: story.id, emoji })
+    setShowEmotionPicker(false)
+  }
+
+  // Click outside to close emotion picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emotionPickerRef.current && !emotionPickerRef.current.contains(event.target as Node)) {
+        setShowEmotionPicker(false)
+      }
+    }
+
+    if (showEmotionPicker) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showEmotionPicker])
+
+  const availableEmotions = ['❤️', '👍', '😂', '😮', '😢', '😡', '🎉', '🔥']
 
   return (
     <div
@@ -160,11 +211,6 @@ export function StoryCard({
                   </>
                 )}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onDelete} className="text-red-600 dark:text-red-400">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Story
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -178,18 +224,43 @@ export function StoryCard({
 
       {/* Actions Bar */}
       <div className="px-4 pb-2">
-        {likesCount > 0 || commentsCount > 0 ? (
+        {(likesCount > 0 || commentsCount > 0 || reactions.length > 0) ? (
           <div className="flex items-center justify-between py-2 text-sm text-gray-600 dark:text-[#acabc1]">
-            {likesCount > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="flex items-center -space-x-1">
-                  <div className="h-5 w-5 rounded-full bg-red-500 flex items-center justify-center">
-                    <Heart className="h-3 w-3 text-white fill-white" />
+            <div className="flex items-center gap-2">
+              {likesCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center -space-x-1">
+                    <div className="h-5 w-5 rounded-full bg-red-500 flex items-center justify-center">
+                      <Heart className="h-3 w-3 text-white fill-white" />
+                    </div>
+                  </div>
+                  <span>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
+                </div>
+              )}
+              {reactions.map(({ emoji, users }) => (
+                <div key={emoji} className="relative group">
+                  <div className="flex items-center gap-1 cursor-pointer">
+                    <span className="text-lg">{emoji}</span>
+                  </div>
+                  {/* Hover tooltip */}
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 min-w-[200px]">
+                    <div className="bg-gray-900 dark:bg-gray-800 text-white rounded-lg shadow-lg p-2 max-h-[200px] overflow-y-auto">
+                      {users.map((user, idx) => (
+                        <div key={idx} className="flex items-center gap-2 py-1 text-xs">
+                          <div className="h-6 w-6 rounded-full bg-gradient-to-r from-[#7367f0] to-[#9e95f5] text-white font-semibold text-[9px] flex items-center justify-center">
+                            {user.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{user.name}</span>
+                            <span className="text-gray-300 text-[10px]">{user.email}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <span>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
-              </div>
-            )}
+              ))}
+            </div>
             {commentsCount > 0 && (
               <span>{commentsCount} {commentsCount === 1 ? 'comment' : 'comments'}</span>
             )}
@@ -199,52 +270,51 @@ export function StoryCard({
 
       {/* Action Buttons */}
       <div className="px-4 py-2 border-t border-gray-200 dark:border-[#44485e]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={isLiked ? 'text-red-500' : 'text-gray-600 dark:text-[#acabc1]'}
+            onClick={handleLike}
+            disabled={likeMutation.isLoading}
+          >
+            <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+            Like
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={showComments ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}
+            onClick={() => setShowComments(!showComments)}
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Comment
+          </Button>
+          <div className="relative" ref={emotionPickerRef}>
             <Button
               variant="ghost"
               size="sm"
-              className={isLiked ? 'text-red-500' : 'text-gray-600 dark:text-[#acabc1]'}
-              onClick={handleLike}
-              disabled={likeMutation.isLoading}
+              className={showEmotionPicker ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}
+              onClick={() => setShowEmotionPicker(!showEmotionPicker)}
             >
-              <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-              Like
+              <Smile className="h-4 w-4 mr-2" />
+              Emotion
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={showComments ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}
-              onClick={() => setShowComments(!showComments)}
-            >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Comment
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-600 dark:text-[#acabc1]">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
-          <div className="flex items-center gap-1">
-            {isOwner && onEdit && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-[#7367f0] hover:text-[#6658d3]"
-                onClick={onEdit}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+            {showEmotionPicker && (
+              <div className="absolute left-full top-0 ml-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
+                <div className="grid grid-cols-4 gap-2">
+                  {availableEmotions.map(emoji => (
+                    <button
+                      key={emoji}
+                      onClick={() => handleEmotionSelect(emoji)}
+                      className="text-2xl hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-2 transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`px-2 ${saved ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
-              onClick={handleSave}
-            >
-              <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
-            </Button>
           </div>
         </div>
       </div>
@@ -259,7 +329,14 @@ export function StoryCard({
       )}
 
       {/* Comments Section */}
-      {showComments && <StoryComments storyId={story.id} currentUserId={currentUserId} />}
+      {showComments && (
+        <StoryComments
+          storyId={story.id}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+          currentUserEmail={currentUserEmail}
+        />
+      )}
     </div>
   )
 }
