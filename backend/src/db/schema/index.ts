@@ -30,6 +30,7 @@ export * from './features/stories';
 export * from './features/likes';
 export * from './features/reactions';
 export * from './features/comments';
+export * from './features/comment-reactions';
 export * from './features/messages';
 export * from './features/connections';
 export * from './features/tasks';

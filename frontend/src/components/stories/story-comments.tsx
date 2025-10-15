@@ -288,9 +288,20 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
 
   const availableEmotions = ['❤️', '👍', '😂', '😮', '😢', '😡', '🎉', '🔥']
 
+  // Comment reaction toggle mutation
+  const commentReactionMutation = trpc.commentReactions.toggle.useMutation({
+    onSuccess: () => {
+      // Invalidate queries to refetch reactions
+      utils.comments.list.invalidate({ storyId })
+      toast.success('Reaction updated')
+    },
+    onError: (error) => {
+      toast.error('Failed to update reaction: ' + error.message)
+    },
+  })
+
   const handleEmotionSelect = (emoji: string, commentId: string) => {
-    // TODO: Implement comment reaction backend
-    toast.info(`Emotion ${emoji} selected for comment (backend not implemented yet)`)
+    commentReactionMutation.mutate({ commentId, emoji })
     setEmotionPickerCommentId(null)
   }
 

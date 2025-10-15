@@ -8,6 +8,7 @@ import { storiesRouter } from './stories.router';
 import { likesRouter } from './likes.router';
 import { reactionsRouter } from './reactions.router';
 import { commentsRouter } from './comments.router';
+import { commentReactionsRouter } from './comment-reactions.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   likes: likesRouter,
   reactions: reactionsRouter,
   comments: commentsRouter,
+  commentReactions: commentReactionsRouter,
 });
 
 export type AppRouter = typeof appRouter;
