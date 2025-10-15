@@ -35,7 +35,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
-  const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null)
+  const [replyingToId, setReplyingToId] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
   const [emotionPickerCommentId, setEmotionPickerCommentId] = useState<string | null>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
@@ -58,11 +58,11 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       setNewComment('')
       setSelectedImages([])
       setSelectedFiles([])
-      setReplyingTo(null)
+      setReplyingToId(null)
       setReplyContent('')
       utils.comments.list.invalidate({ storyId })
       utils.comments.getCount.invalidate({ storyId })
-      toast.success(replyingTo ? 'Reply added!' : 'Comment added!')
+      toast.success('Comment added!')
     },
     onError: (error) => {
       toast.error('Failed to add comment: ' + error.message)
@@ -132,7 +132,6 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       storyId,
       content: newComment,
       attachments: attachments.length > 0 ? attachments : undefined,
-      parentId: replyingTo?.id,
     })
   }
 
@@ -176,15 +175,24 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     }
   }
 
-  const handleReply = (commentId: string, authorName: string) => {
-    setReplyingTo({ id: commentId, authorName })
-    setNewComment(`@${authorName} `)
-    textareaRef.current?.focus()
+  const handleReply = (commentId: string) => {
+    setReplyingToId(commentId)
+    setReplyContent('')
   }
 
   const handleCancelReply = () => {
-    setReplyingTo(null)
-    setNewComment('')
+    setReplyingToId(null)
+    setReplyContent('')
+  }
+
+  const handleSubmitReply = async (parentId: string) => {
+    if (!replyContent.trim()) return
+
+    createMutation.mutate({
+      storyId,
+      content: replyContent,
+      parentId,
+    })
   }
 
   const handleEmojiSelect = (emoji: string) => {
@@ -294,29 +302,11 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     <div className="border-t border-gray-200 dark:border-[#44485e] bg-gray-100 dark:bg-[#25293c]">
       {/* Add Comment Form */}
       <form onSubmit={handleSubmit} className="p-4">
-        {/* Replying To Banner */}
-        {replyingTo && (
-          <div className="mb-2 flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-[#44485e] rounded text-sm">
-            <span className="text-blue-700 dark:text-blue-300">
-              Replying to <span className="font-semibold">@{replyingTo.authorName}</span>
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleCancelReply}
-              className="h-6 w-6 p-0 text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-
         <Textarea
           ref={textareaRef}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          placeholder={replyingTo ? `Reply to @${replyingTo.authorName}...` : "Write a comment..."}
+          placeholder="Write a comment..."
           className="min-h-[60px] max-h-[60px] resize-none bg-white dark:bg-[#2f3349] overflow-y-auto"
           rows={2}
           disabled={createMutation.isLoading}
@@ -569,13 +559,45 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                         variant="ghost"
                         size="sm"
                         className="h-7 text-xs text-gray-600 dark:text-[#acabc1]"
-                        onClick={() => handleReply(comment.id, comment.authorName || 'User')}
+                        onClick={() => handleReply(comment.id)}
                       >
                         <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
                         Reply
                       </Button>
                     </div>
                   </>
+                )}
+
+                {/* Inline Reply Form */}
+                {replyingToId === comment.id && (
+                  <div className="mt-3 space-y-2">
+                    <Textarea
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      placeholder="Write a reply..."
+                      className="min-h-[60px] resize-none bg-white dark:bg-[#2f3349]"
+                      rows={2}
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSubmitReply(comment.id)}
+                        disabled={!replyContent.trim() || createMutation.isLoading}
+                        className="bg-[#7367f0] hover:bg-[#6658d3]"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Send
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelReply}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 )}
 
                 {/* Attachments */}
@@ -747,7 +769,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 text-xs text-gray-600 dark:text-[#acabc1]"
-                                  onClick={() => handleReply(comment.id, reply.authorName || 'User')}
+                                  onClick={() => handleReply(comment.id)}
                                 >
                                   <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
                                   Reply
@@ -758,6 +780,38 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                         </div>
                       )
                     })}
+                  </div>
+                )}
+
+                {/* Inline Reply Form at bottom of replies */}
+                {replyingToId === comment.id && replies.length > 0 && (
+                  <div className="ml-8 mt-3 pl-4 border-l-2 border-gray-300 dark:border-[#44485e] space-y-2">
+                    <Textarea
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      placeholder="Write a reply..."
+                      className="min-h-[60px] resize-none bg-white dark:bg-[#2f3349]"
+                      rows={2}
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSubmitReply(comment.id)}
+                        disabled={!replyContent.trim() || createMutation.isLoading}
+                        className="bg-[#7367f0] hover:bg-[#6658d3]"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Send
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelReply}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
