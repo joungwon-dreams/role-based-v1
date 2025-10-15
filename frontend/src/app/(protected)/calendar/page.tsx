@@ -184,7 +184,7 @@ export default function CalendarPage() {
 
   return (
     <main className="pt-[5rem]">
-      <div className="px-[70px] py-6">
+      <div className="py-6">
         <div className="flex flex-wrap -mx-3">
           {/* Left Sidebar */}
           <div className="w-full lg:w-64 xl:w-72 px-3 mb-6 lg:mb-0">

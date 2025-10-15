@@ -101,7 +101,7 @@ export default function ProjectsPage() {
 
         <ProfileTabs activeTab="projects" />
 
-        <div className="px-6">
+        <div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {projects.map((project, index) => (
               <div

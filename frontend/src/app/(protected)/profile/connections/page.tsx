@@ -40,7 +40,7 @@ export default function ConnectionsPage() {
 
         <ProfileTabs activeTab="connections" />
 
-        <div className="px-6">
+        <div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {connections.map((connection, index) => (
               <div

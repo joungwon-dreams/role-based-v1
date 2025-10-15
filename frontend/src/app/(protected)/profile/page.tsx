@@ -50,7 +50,7 @@ export default function ProfilePage() {
         <ProfileTabs activeTab="profile" />
 
         {/* Profile Content */}
-        <div className="px-6">
+        <div>
           <div className="flex flex-wrap -mx-3">
             {/* Left Column - About & Overview (33%) */}
             <div className="w-full xl:w-1/3 px-3">

@@ -39,7 +39,7 @@ const contacts = [
 export default function MessagePage() {
   return (
     <main className="pt-[5rem]">
-      <div className="pt-6 px-6">
+      <div className="pt-6">
         <div className="flex h-[calc(100vh-8rem)] gap-6">
           {/* Left Sidebar - Chat List */}
           <div className="w-[260px] flex-shrink-0">
