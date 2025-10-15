@@ -20,15 +20,15 @@ interface UserAvatarProps {
 }
 
 const sizeClasses = {
-  sm: 'h-8 w-8',
-  md: 'h-10 w-10',
-  lg: 'h-12 w-12',
+  sm: 'h-6 w-6',
+  md: 'h-8 w-8',
+  lg: 'h-10 w-10',
 }
 
 const textSizeClasses = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-base',
+  sm: 'text-[10px]',
+  md: 'text-xs',
+  lg: 'text-sm',
 }
 
 export function UserAvatar({
@@ -79,17 +79,17 @@ export function UserAvatar({
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt={displayName} />
         ) : null}
-        <AvatarFallback className={`bg-gradient-to-r ${getAvatarColor()} text-white font-semibold`}>
+        <AvatarFallback className={`bg-gradient-to-r ${getAvatarColor()} text-white font-semibold text-[11px]`}>
           {getInitials()}
         </AvatarFallback>
       </Avatar>
 
-      <div className="flex flex-col">
-        <p className={`font-semibold text-gray-900 dark:text-white ${textSizeClasses[size]}`}>
-          {displayName}
+      <div className="flex flex-col min-w-0">
+        <p className={`font-medium text-gray-900 dark:text-white leading-tight truncate ${textSizeClasses[size]}`}>
+          {name || 'Unknown User'}
         </p>
         {showEmail && email && (
-          <p className={`text-gray-600 dark:text-[#acabc1] ${size === 'sm' ? 'text-xs' : 'text-sm'}`}>
+          <p className={`text-gray-500 dark:text-[#acabc1] leading-tight truncate ${size === 'sm' ? 'text-[11px]' : size === 'md' ? 'text-xs' : 'text-sm'}`}>
             {email}
           </p>
         )}

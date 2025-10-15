@@ -8,6 +8,8 @@ import { useTheme } from "next-themes"
 import { useSidebar } from "@/components/dashboard/sidebar"
 import { useLocale } from "@/lib/i18n"
 import { useAuth } from "@/hooks/useAuth"
+import { UserAvatar } from "@/components/common/user-avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false)
@@ -56,6 +58,38 @@ export function Navbar() {
   const handleLogout = () => {
     logout()
     window.location.href = '/'
+  }
+
+  // Generate consistent color from userId (same as UserAvatar component)
+  const getAvatarColor = () => {
+    const colors = [
+      'from-[#7367f0] to-[#9e95f5]',
+      'from-red-500 to-red-600',
+      'from-blue-500 to-blue-600',
+      'from-green-500 to-green-600',
+      'from-yellow-500 to-yellow-600',
+      'from-purple-500 to-purple-600',
+      'from-pink-500 to-pink-600',
+      'from-indigo-500 to-indigo-600',
+    ]
+    const userId = user?.userId || ''
+    const index = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    return colors[index % colors.length]
+  }
+
+  // Generate initials (same as UserAvatar component)
+  const getInitials = () => {
+    if (user?.name) {
+      const parts = user.name.split(' ')
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      }
+      return user.name.substring(0, 2).toUpperCase()
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase()
+    }
+    return user?.userId ? user.userId.substring(0, 2).toUpperCase() : 'U'
   }
 
   return (
@@ -158,9 +192,13 @@ export function Navbar() {
         <div className="relative">
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7367f0] text-white hover:opacity-90 transition-opacity"
+            className="hover:opacity-90 transition-opacity"
           >
-            <User className="h-5 w-5" />
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className={`bg-gradient-to-r ${getAvatarColor()} text-white font-semibold text-[11px]`}>
+                {getInitials()}
+              </AvatarFallback>
+            </Avatar>
           </button>
 
           {/* Dropdown Menu */}
@@ -172,15 +210,13 @@ export function Navbar() {
               />
               <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border border-gray-200 dark:border-[#44485e] bg-white dark:bg-[#2f3349] shadow-lg">
                 <div className="p-4 border-b border-gray-200 dark:border-[#44485e]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7367f0] text-white">
-                      <User className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">{getUserDisplayName()}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{getUserRole()}</div>
-                    </div>
-                  </div>
+                  <UserAvatar
+                    userId={user?.userId || ''}
+                    name={user?.name}
+                    email={user?.email}
+                    size="md"
+                    showEmail={true}
+                  />
                 </div>
                 <div className="p-2">
                   <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e]">

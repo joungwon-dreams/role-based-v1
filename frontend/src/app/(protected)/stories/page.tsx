@@ -31,15 +31,23 @@ export default function StoriesPage() {
   const [selectedStory, setSelectedStory] = useState<any>(null)
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
+  const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined)
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(undefined)
 
   // Subscribe to auth store changes
   useEffect(() => {
     // Initialize with current user
-    setCurrentUserId(authStore.getState().user?.userId)
+    const currentUser = authStore.getState().user
+    setCurrentUserId(currentUser?.userId)
+    setCurrentUserName(currentUser?.name)
+    setCurrentUserEmail(currentUser?.email)
 
     // Subscribe to changes
     const unsubscribe = authStore.subscribe(() => {
-      setCurrentUserId(authStore.getState().user?.userId)
+      const user = authStore.getState().user
+      setCurrentUserId(user?.userId)
+      setCurrentUserName(user?.name)
+      setCurrentUserEmail(user?.email)
     })
 
     return unsubscribe
@@ -263,6 +271,8 @@ export default function StoriesPage() {
                       key={story.id}
                       story={story}
                       currentUserId={currentUserId}
+                      currentUserName={currentUserName}
+                      currentUserEmail={currentUserEmail}
                       onEdit={() => handleEditStory(story)}
                       onDelete={() => {
                         setSelectedStory(story)
