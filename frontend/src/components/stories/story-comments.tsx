@@ -78,16 +78,16 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     <div className="border-t border-gray-200 dark:border-[#44485e] bg-gray-100 dark:bg-[#25293c]">
       {/* Add Comment Form */}
       <form onSubmit={handleSubmit} className="p-4">
-        <div className="relative">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Write a comment..."
-            className="min-h-[80px] resize-none pr-4 pb-32 bg-white dark:bg-[#2f3349]"
-            rows={2}
-            disabled={createMutation.isLoading}
-          />
-          <div className="absolute bottom-3 left-3 flex items-center gap-2">
+        <Textarea
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder="Write a comment..."
+          className="min-h-[60px] max-h-[60px] resize-none bg-white dark:bg-[#2f3349] overflow-y-auto"
+          rows={2}
+          disabled={createMutation.isLoading}
+        />
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -116,17 +116,15 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
               <Smile className="h-5 w-5" />
             </Button>
           </div>
-          <div className="absolute bottom-3 right-3">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!newComment.trim() || createMutation.isLoading}
-              className="bg-[#7367f0] hover:bg-[#6658d3]"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Send
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!newComment.trim() || createMutation.isLoading}
+            className="bg-[#7367f0] hover:bg-[#6658d3]"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Send
+          </Button>
         </div>
       </form>
 
