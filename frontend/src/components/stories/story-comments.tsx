@@ -37,7 +37,9 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
   const [editContent, setEditContent] = useState('')
   const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null)
   const [replyContent, setReplyContent] = useState('')
+  const [emotionPickerCommentId, setEmotionPickerCommentId] = useState<string | null>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
+  const emotionPickerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -220,6 +222,20 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     }
   }, [showEmojiPicker])
 
+  // Click outside to close emotion picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emotionPickerRef.current && !emotionPickerRef.current.contains(event.target as Node)) {
+        setEmotionPickerCommentId(null)
+      }
+    }
+
+    if (emotionPickerCommentId) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [emotionPickerCommentId])
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     const imageFiles = files.filter(file => file.type.startsWith('image/'))
@@ -261,6 +277,14 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🥈', '🥉',
     '⭐', '🌟', '✨', '💫', '🔥', '💯', '✅', '❌',
   ]
+
+  const availableEmotions = ['❤️', '👍', '😂', '😮', '😢', '😡', '🎉', '🔥']
+
+  const handleEmotionSelect = (emoji: string, commentId: string) => {
+    // TODO: Implement comment reaction backend
+    toast.info(`Emotion ${emoji} selected for comment (backend not implemented yet)`)
+    setEmotionPickerCommentId(null)
+  }
 
   if (isLoading) {
     return <div className="p-4 text-center text-gray-500">Loading comments...</div>
@@ -443,44 +467,36 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                     <span className="text-xs text-gray-500 dark:text-[#acabc1]">
                       {formatDistanceToNow(createdAt, { addSuffix: true })}
                     </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleReply(comment.id, comment.authorName || 'User')}
-                        >
-                          <MessageSquare className="mr-2 h-4 w-4" />
-                          Reply
-                        </DropdownMenuItem>
-                        {isOwner && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => handleEdit(comment.id, comment.content)}
-                              disabled={updateMutation.isLoading || editingId === comment.id}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(comment.id)}
-                              disabled={deleteMutation.isLoading}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {isOwner && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleEdit(comment.id, comment.content)}
+                            disabled={updateMutation.isLoading || editingId === comment.id}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(comment.id)}
+                            disabled={deleteMutation.isLoading}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
 
@@ -516,9 +532,50 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap pl-0">
-                    {comment.content}
-                  </p>
+                  <>
+                    <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap pl-0">
+                      {comment.content}
+                    </p>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center gap-1 mt-2">
+                      <div className="relative" ref={emotionPickerCommentId === comment.id ? emotionPickerRef : null}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`h-7 text-xs ${emotionPickerCommentId === comment.id ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
+                          onClick={() => setEmotionPickerCommentId(emotionPickerCommentId === comment.id ? null : comment.id)}
+                        >
+                          <Smile className="h-3.5 w-3.5 mr-1.5" />
+                          Emotion
+                        </Button>
+                        {emotionPickerCommentId === comment.id && (
+                          <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
+                            <div className="grid grid-cols-4 gap-2">
+                              {availableEmotions.map(emoji => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => handleEmotionSelect(emoji, comment.id)}
+                                  className="text-lg hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-1 transition-colors"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-gray-600 dark:text-[#acabc1]"
+                        onClick={() => handleReply(comment.id, comment.authorName || 'User')}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                        Reply
+                      </Button>
+                    </div>
+                  </>
                 )}
 
                 {/* Attachments */}
@@ -653,9 +710,50 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                               </div>
                             </div>
                           ) : (
-                            <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap">
-                              {reply.content}
-                            </p>
+                            <>
+                              <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap">
+                                {reply.content}
+                              </p>
+
+                              {/* Action Bar for Replies */}
+                              <div className="flex items-center gap-1 mt-2">
+                                <div className="relative" ref={emotionPickerCommentId === reply.id ? emotionPickerRef : null}>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`h-7 text-xs ${emotionPickerCommentId === reply.id ? 'text-[#7367f0]' : 'text-gray-600 dark:text-[#acabc1]'}`}
+                                    onClick={() => setEmotionPickerCommentId(emotionPickerCommentId === reply.id ? null : reply.id)}
+                                  >
+                                    <Smile className="h-3.5 w-3.5 mr-1.5" />
+                                    Emotion
+                                  </Button>
+                                  {emotionPickerCommentId === reply.id && (
+                                    <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
+                                      <div className="grid grid-cols-4 gap-2">
+                                        {availableEmotions.map(emoji => (
+                                          <button
+                                            key={emoji}
+                                            onClick={() => handleEmotionSelect(emoji, reply.id)}
+                                            className="text-lg hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-1 transition-colors"
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs text-gray-600 dark:text-[#acabc1]"
+                                  onClick={() => handleReply(comment.id, reply.authorName || 'User')}
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                                  Reply
+                                </Button>
+                              </div>
+                            </>
                           )}
                         </div>
                       )
