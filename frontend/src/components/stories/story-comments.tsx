@@ -83,7 +83,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Write a comment..."
-            className="min-h-[80px] resize-none pr-4 pb-24 bg-white dark:bg-[#2f3349]"
+            className="min-h-[80px] resize-none pr-4 pb-32 bg-white dark:bg-[#2f3349]"
             rows={2}
             disabled={createMutation.isLoading}
           />
