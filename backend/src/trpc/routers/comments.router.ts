@@ -117,6 +117,55 @@ export const commentsRouter = router({
     }),
 
   /**
+   * Update a comment
+   */
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        content: z.string().min(1, 'Comment cannot be empty'),
+        attachments: z
+          .array(
+            z.object({
+              type: z.enum(['image', 'file']),
+              url: z.string(),
+              name: z.string(),
+              size: z.number(),
+            })
+          )
+          .optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if comment exists and belongs to user
+      const [existingComment] = await ctx.db
+        .select()
+        .from(comments)
+        .where(and(eq(comments.id, input.id), eq(comments.authorId, ctx.user.userId)));
+
+      if (!existingComment) {
+        throw new Error('Comment not found or you do not have permission to edit it');
+      }
+
+      const [updatedComment] = await ctx.db
+        .update(comments)
+        .set({
+          content: input.content,
+          attachments: input.attachments || null,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(comments.id, input.id), eq(comments.authorId, ctx.user.userId)))
+        .returning();
+
+      return {
+        id: updatedComment.id,
+        content: updatedComment.content,
+        attachments: updatedComment.attachments,
+        updatedAt: updatedComment.updatedAt,
+      };
+    }),
+
+  /**
    * Delete a comment
    */
   delete: protectedProcedure

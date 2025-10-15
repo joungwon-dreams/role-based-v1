@@ -8,7 +8,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Trash2, Send, Image, Paperclip, Smile } from 'lucide-react'
+import { Trash2, Send, Image, Paperclip, Smile, Edit, X, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { UserAvatar } from '@/components/common/user-avatar'
@@ -27,6 +27,8 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
   const emojiPickerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -52,6 +54,19 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
     },
     onError: (error) => {
       toast.error('Failed to add comment: ' + error.message)
+    },
+  })
+
+  // Update comment mutation
+  const updateMutation = trpc.comments.update.useMutation({
+    onSuccess: () => {
+      setEditingId(null)
+      setEditContent('')
+      utils.comments.list.invalidate({ storyId })
+      toast.success('Comment updated!')
+    },
+    onError: (error) => {
+      toast.error('Failed to update comment: ' + error.message)
     },
   })
 
@@ -114,6 +129,31 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
       reader.readAsDataURL(file)
       reader.onload = () => resolve(reader.result as string)
       reader.onerror = (error) => reject(error)
+    })
+  }
+
+  const handleEdit = (commentId: string, currentContent: string) => {
+    setEditingId(commentId)
+    setEditContent(currentContent)
+  }
+
+  const calculateRows = (text: string) => {
+    const lines = text.split('\n').length
+    const minRows = 2
+    const maxRows = 10
+    return Math.min(Math.max(lines, minRows), maxRows)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditContent('')
+  }
+
+  const handleUpdate = (commentId: string) => {
+    if (!editContent.trim()) return
+    updateMutation.mutate({
+      id: commentId,
+      content: editContent,
     })
   }
 
@@ -363,21 +403,66 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                       {formatDistanceToNow(createdAt, { addSuffix: true })}
                     </span>
                     {isOwner && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
-                        onClick={() => handleDelete(comment.id)}
-                        disabled={deleteMutation.isLoading}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-blue-500 hover:text-blue-600"
+                          onClick={() => handleEdit(comment.id, comment.content)}
+                          disabled={updateMutation.isLoading || editingId === comment.id}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                          onClick={() => handleDelete(comment.id)}
+                          disabled={deleteMutation.isLoading}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
-                <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap pl-0">
-                  {comment.content}
-                </p>
+
+                {/* Edit Mode */}
+                {editingId === comment.id ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="bg-white dark:bg-[#2f3349] resize-none"
+                      rows={calculateRows(editContent)}
+                      disabled={updateMutation.isLoading}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdate(comment.id)}
+                        disabled={!editContent.trim() || updateMutation.isLoading}
+                        className="bg-[#7367f0] hover:bg-[#6658d3]"
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelEdit}
+                        disabled={updateMutation.isLoading}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700 dark:text-[#acabc1] whitespace-pre-wrap pl-0">
+                    {comment.content}
+                  </p>
+                )}
 
                 {/* Attachments */}
                 {comment.attachments && comment.attachments.length > 0 && (
