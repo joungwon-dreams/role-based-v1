@@ -8,9 +8,15 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Trash2, Send, Image, Paperclip, Smile, Edit, X, Check } from 'lucide-react'
+import { Trash2, Send, Image, Paperclip, Smile, Edit, X, Check, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
@@ -403,26 +409,34 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                       {formatDistanceToNow(createdAt, { addSuffix: true })}
                     </span>
                     {isOwner && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-blue-500 hover:text-blue-600"
-                          onClick={() => handleEdit(comment.id, comment.content)}
-                          disabled={updateMutation.isLoading || editingId === comment.id}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
-                          onClick={() => handleDelete(comment.id)}
-                          disabled={deleteMutation.isLoading}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-[#acabc1] dark:hover:text-white"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleEdit(comment.id, comment.content)}
+                            disabled={updateMutation.isLoading || editingId === comment.id}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(comment.id)}
+                            disabled={deleteMutation.isLoading}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </div>
