@@ -240,7 +240,7 @@ export function StoryCard({
               {reactions.map(({ emoji, users }) => (
                 <div key={emoji} className="relative group">
                   <div className="flex items-center gap-1 cursor-pointer">
-                    <span className="text-lg">{emoji}</span>
+                    <span className="text-sm">{emoji}</span>
                   </div>
                   {/* Hover tooltip */}
                   <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 min-w-[200px]">
@@ -301,13 +301,13 @@ export function StoryCard({
               Emotion
             </Button>
             {showEmotionPicker && (
-              <div className="absolute left-full top-0 ml-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
+              <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
                 <div className="grid grid-cols-4 gap-2">
                   {availableEmotions.map(emoji => (
                     <button
                       key={emoji}
                       onClick={() => handleEmotionSelect(emoji)}
-                      className="text-2xl hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-2 transition-colors"
+                      className="text-lg hover:bg-gray-100 dark:hover:bg-[#44485e] rounded p-1 transition-colors"
                     >
                       {emoji}
                     </button>
