@@ -76,7 +76,7 @@ export function StoryCard({
             name={story.authorName}
             email={story.authorEmail}
             size="md"
-            showEmail={false}
+            showEmail={true}
           />
 
           {/* Metadata */}
