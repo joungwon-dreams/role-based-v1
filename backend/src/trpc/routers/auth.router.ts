@@ -236,6 +236,8 @@ export const authRouter = router({
       return {
         success: true,
         csrfToken, // Send CSRF token to client
+        accessToken, // Also send tokens for localStorage fallback (development)
+        refreshToken,
         user: {
           id: user.id,
           email: user.email,

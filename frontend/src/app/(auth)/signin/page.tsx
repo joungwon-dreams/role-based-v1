@@ -48,14 +48,19 @@ export default function SigninPage() {
     try {
       const result = await trpcClient.auth.signin.mutate(data);
 
-      // HttpOnly Cookies: Tokens are stored in HttpOnly cookies by backend
-      // Update auth store with user info (triggers isAuthenticated = true)
-      login(result.user);
-
-      // Store CSRF token for Double Submit Cookie pattern
+      // Store tokens in localStorage for development (cookies might not work cross-origin)
+      if (result.accessToken) {
+        localStorage.setItem('accessToken', result.accessToken);
+      }
+      if (result.refreshToken) {
+        localStorage.setItem('refreshToken', result.refreshToken);
+      }
       if (result.csrfToken) {
         localStorage.setItem('csrfToken', result.csrfToken);
       }
+
+      // Update auth store with user info (triggers isAuthenticated = true)
+      login(result.user);
 
       toast.success('Successfully signed in!');
       router.push('/dashboard');
