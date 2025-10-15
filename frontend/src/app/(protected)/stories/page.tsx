@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { StoryCard } from '@/components/stories/story-card'
 import { StoryModal, type StoryFormData } from '@/components/stories/story-modal'
 import { Badge } from '@/components/ui/badge'
+import { authStore } from '@/store/auth.store'
 
 type FilterType = 'all' | 'own' | 'published' | 'drafts'
 
@@ -30,9 +31,8 @@ export default function StoriesPage() {
   const [selectedStory, setSelectedStory] = useState<any>(null)
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
 
-  // Get current user ID from auth context/store
-  // TODO: Replace with actual user ID from auth
-  const currentUserId = 'current-user-id'
+  // Get current user ID from auth store
+  const currentUserId = authStore.getState().user?.userId
 
   // tRPC queries and mutations
   const { data: stories = [], refetch } = trpc.stories.list.useQuery(
