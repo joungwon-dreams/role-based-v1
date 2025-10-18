@@ -152,28 +152,45 @@ export const connectionsRouter = router({
    * Send a friend request
    */
   sendRequest: protectedProcedure
-    .input(z.object({ userId: z.string().uuid() }))
+    .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const requesterId = ctx.user.userId;
-      const addresseeId = input.userId;
+      let addresseeId = input.userId;
+
+      // If userId is an email, look up the user ID
+      let addressee;
+      if (input.userId.includes('@')) {
+        addressee = await ctx.db.query.users.findFirst({
+          where: eq(users.email, input.userId),
+        });
+
+        if (!addressee) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'User not found',
+          });
+        }
+
+        addresseeId = addressee.id;
+      } else {
+        // Check if user exists
+        addressee = await ctx.db.query.users.findFirst({
+          where: eq(users.id, addresseeId),
+        });
+
+        if (!addressee) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'User not found',
+          });
+        }
+      }
 
       // Cannot send request to yourself
       if (requesterId === addresseeId) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Cannot send friend request to yourself',
-        });
-      }
-
-      // Check if user exists
-      const addressee = await ctx.db.query.users.findFirst({
-        where: eq(users.id, addresseeId),
-      });
-
-      if (!addressee) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
         });
       }
 
@@ -393,6 +410,66 @@ export const connectionsRouter = router({
       return {
         success: true,
         message: 'Friend removed successfully',
+      };
+    }),
+
+  /**
+   * Check friendship status between current user and another user
+   */
+  checkFriendship: protectedProcedure
+    .input(z.object({ friendId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.user.userId;
+      let targetUserId = input.friendId;
+
+      // If friendId is an email, look up the user ID
+      if (input.friendId.includes('@')) {
+        const targetUser = await ctx.db.query.users.findFirst({
+          where: eq(users.email, input.friendId),
+        });
+
+        if (!targetUser) {
+          return {
+            status: null,
+            connectionId: null,
+          };
+        }
+
+        targetUserId = targetUser.id;
+      }
+
+      // Cannot check friendship with yourself
+      if (userId === targetUserId) {
+        return {
+          status: null,
+          connectionId: null,
+        };
+      }
+
+      // Find connection between current user and target user
+      const connection = await ctx.db.query.connections.findFirst({
+        where: or(
+          and(
+            eq(connections.requesterId, userId),
+            eq(connections.addresseeId, targetUserId)
+          ),
+          and(
+            eq(connections.requesterId, targetUserId),
+            eq(connections.addresseeId, userId)
+          )
+        ),
+      });
+
+      if (!connection) {
+        return {
+          status: null,
+          connectionId: null,
+        };
+      }
+
+      return {
+        status: connection.status,
+        connectionId: connection.id,
       };
     }),
 

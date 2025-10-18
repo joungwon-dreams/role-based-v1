@@ -11,12 +11,19 @@
  * - Gradient background based on userId
  * - Dark mode support
  * - Role/email display options
+ * - Hover menu with Profile, Send Message, Add Friend actions
  */
 
 'use client'
 
+import { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { User, MessageCircle, UserPlus, Check } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
+import { trpc } from '@/lib/trpc/react'
+import { toast } from 'sonner'
 
 interface UserAvatarProps {
   userId: string
@@ -27,6 +34,7 @@ interface UserAvatarProps {
   size?: 'sm' | 'md' | 'lg'
   showEmail?: boolean
   showOnlineStatus?: boolean
+  showHoverMenu?: boolean
   className?: string
 }
 
@@ -57,8 +65,31 @@ export function UserAvatar({
   size = 'md',
   showEmail = true,
   showOnlineStatus = false,
+  showHoverMenu = true,
   className = '',
 }: UserAvatarProps) {
+  const [showMenu, setShowMenu] = useState(false)
+  const router = useRouter()
+  const { user: currentUser } = useAuth()
+
+  // Check if this is the current user's avatar
+  const isCurrentUser = currentUser?.userId === userId || currentUser?.email === email
+
+  // Check friend status
+  const { data: friendStatus } = trpc.connections.checkFriendship.useQuery(
+    { friendId: userId },
+    { enabled: !isCurrentUser && showHoverMenu }
+  )
+
+  // Add friend mutation
+  const addFriend = trpc.connections.sendRequest.useMutation({
+    onSuccess: () => {
+      toast.success('Friend request sent!')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to send friend request')
+    }
+  })
   // Generate initials from name or email
   const getInitials = () => {
     if (name) {
@@ -105,8 +136,31 @@ export function UserAvatar({
   // Always show email as secondary text (unless role is provided)
   const secondaryText = role || (showEmail && email ? email : null)
 
+  const isFriend = friendStatus?.status === 'accepted'
+
+  const handleViewProfile = () => {
+    router.push(`/profile/${userId}`)
+    setShowMenu(false)
+  }
+
+  const handleSendMessage = () => {
+    router.push(`/messages?to=${userId}`)
+    setShowMenu(false)
+  }
+
+  const handleAddFriend = () => {
+    if (!isFriend) {
+      addFriend.mutate({ userId: userId })
+    }
+    setShowMenu(false)
+  }
+
   return (
-    <div className={cn('flex items-center gap-3', className)}>
+    <div
+      className={cn('relative flex items-center gap-3', className)}
+      onMouseEnter={() => showHoverMenu && !isCurrentUser && setShowMenu(true)}
+      onMouseLeave={() => setShowMenu(false)}
+    >
       <div className="relative flex-shrink-0">
         <Avatar className={sizeClasses[size]}>
           {avatarUrl ? (
@@ -142,6 +196,50 @@ export function UserAvatar({
           </p>
         )}
       </div>
+
+      {/* Hover Menu */}
+      {showMenu && showHoverMenu && !isCurrentUser && (
+        <div className="absolute left-0 top-full mt-2 z-50 w-48 rounded-lg border border-gray-200 dark:border-[#44485e] bg-white dark:bg-[#2f3349] shadow-lg">
+          <div className="p-2">
+            <button
+              onClick={handleViewProfile}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
+            >
+              <User className="h-4 w-4" />
+              <span>View Profile</span>
+            </button>
+            <button
+              onClick={handleSendMessage}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Send Message</span>
+            </button>
+            <button
+              onClick={handleAddFriend}
+              disabled={isFriend}
+              className={cn(
+                'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                isFriend
+                  ? 'text-green-600 dark:text-green-400 cursor-default'
+                  : 'text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e]'
+              )}
+            >
+              {isFriend ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  <span>My Friend</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4" />
+                  <span>Add Friend</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
