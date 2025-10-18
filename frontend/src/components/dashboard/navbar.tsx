@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
+import { trpc } from "@/lib/trpc/react"
 
 export function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false)
@@ -22,6 +23,16 @@ export function Navbar() {
   const { locale, setLocale } = useLocale()
   const { user, logout } = useAuth()
   const router = useRouter()
+
+  // Fetch unread notifications count
+  const { data: unreadCount = 0 } = trpc.notifications.unreadCount.useQuery(
+    undefined,
+    {
+      refetchOnMount: true,
+      refetchInterval: 30000, // Refetch every 30 seconds
+      enabled: !!user // Only fetch when user is logged in
+    }
+  )
 
   React.useEffect(() => {
     setMounted(true)
@@ -182,12 +193,19 @@ export function Navbar() {
         </button>
 
         {/* Notifications */}
-        <button className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100">
-          <Bell className="h-5 w-5 text-gray-600" />
-          <span className="absolute right-1 top-1 flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff4c51] opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ff4c51]"></span>
-          </span>
+        <button
+          onClick={() => router.push('/notifications')}
+          className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
+        >
+          <Bell className="h-5 w-5 text-gray-600 dark:text-[#acabc1]" />
+          {unreadCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="absolute -right-1 -top-1 h-5 min-w-[20px] px-1 flex items-center justify-center text-[10px] font-semibold bg-[#ff4c51] hover:bg-[#ff4c51]"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
         </button>
 
         {/* User Profile Dropdown */}
@@ -229,7 +247,15 @@ export function Navbar() {
                     className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e]"
                   >
                     <User className="h-4 w-4" />
-                    <span>My Profile</span>
+                    <span>
+                      My Profile
+                      {(() => {
+                        const role = getUserRole()
+                        if (role === 'User') return null
+                        if (role === 'Superadmin') return ' (Super)'
+                        return ` (${role})`
+                      })()}
+                    </span>
                   </button>
                   <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e]">
                     <Settings className="h-4 w-4" />

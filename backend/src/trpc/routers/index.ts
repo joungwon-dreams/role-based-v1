@@ -11,6 +11,7 @@ import { commentsRouter } from './comments.router';
 import { commentReactionsRouter } from './comment-reactions.router';
 import { messagesRouter } from './messages.router';
 import { connectionsRouter } from './connections.router';
+import { notificationsRouter } from './notifications.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -25,6 +26,7 @@ export const appRouter = router({
   commentReactions: commentReactionsRouter,
   messages: messagesRouter,
   connections: connectionsRouter,
+  notifications: notificationsRouter,
 });
 
 export type AppRouter = typeof appRouter;

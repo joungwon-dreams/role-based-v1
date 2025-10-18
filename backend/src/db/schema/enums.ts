@@ -59,10 +59,17 @@ export const securityListTypeEnum = pgEnum('security_list_type', ['ip', 'email']
 
 // Notification type enum
 export const notificationTypeEnum = pgEnum('notification_type', [
-  'info',
-  'warning',
-  'error',
-  'success',
+  'system',
+  'friend_request',
+  'friend_accept',
+  'message',
+  'story_like',
+  'story_comment',
+  'comment_reply',
+  'calendar_event',
+  'mention',
+  'team_invite',
+  'admin_alert',
 ]);
 
 // Project status enum
