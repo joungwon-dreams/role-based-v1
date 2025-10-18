@@ -290,9 +290,10 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
 
   // Comment reaction toggle mutation
   const commentReactionMutation = trpc.commentReactions.toggle.useMutation({
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       // Invalidate queries to refetch reactions
       utils.comments.list.invalidate({ storyId })
+      utils.commentReactions.list.invalidate({ commentId: variables.commentId })
       toast.success('Reaction updated')
     },
     onError: (error) => {
@@ -397,6 +398,9 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
               {comment.content}
             </p>
 
+            {/* Reactions Display */}
+            <CommentReactionsDisplay commentId={comment.id} currentUserId={currentUserId} />
+
             {/* Action Bar */}
             <div className="flex items-center gap-1 mt-2">
               <div className="relative" ref={emotionPickerCommentId === comment.id ? emotionPickerRef : null}>
@@ -410,7 +414,7 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
                   Emotion
                 </Button>
                 {emotionPickerCommentId === comment.id && (
-                  <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-10">
+                  <div className="absolute left-0 top-full mt-1 bg-white dark:bg-[#2f3349] rounded-lg shadow-lg border border-gray-200 dark:border-[#44485e] p-2 z-50" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
                     <div className="grid grid-cols-4 gap-2">
                       {availableEmotions.map(emoji => (
                         <button
@@ -669,6 +673,58 @@ export function StoryComments({ storyId, currentUserId, currentUserName, current
           {comments.filter(c => !c.parentId).map(comment => renderComment(comment, 0))}
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Comment Reactions Display Component
+ * Shows emoji reactions for a comment
+ */
+interface CommentReactionsDisplayProps {
+  commentId: string
+  currentUserId?: string
+}
+
+function CommentReactionsDisplay({ commentId, currentUserId }: CommentReactionsDisplayProps) {
+  const { data: reactions = [] } = trpc.commentReactions.list.useQuery(
+    { commentId },
+    { enabled: !!commentId }
+  )
+
+  const utils = trpc.useContext()
+
+  const toggleReactionMutation = trpc.commentReactions.toggle.useMutation({
+    onSuccess: () => {
+      utils.commentReactions.list.invalidate({ commentId })
+      utils.commentReactions.getUserReactions.invalidate({ commentId })
+    },
+  })
+
+  if (!reactions || reactions.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mt-2">
+      {reactions.map(({ emoji, users }) => {
+        const hasReacted = users.some(u => u.userId === currentUserId)
+
+        return (
+          <button
+            key={emoji}
+            onClick={() => toggleReactionMutation.mutate({ commentId, emoji })}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm transition-colors ${
+              hasReacted
+                ? 'bg-[#7367f0]/10 text-[#7367f0] border border-[#7367f0]/30'
+                : 'bg-gray-100 dark:bg-[#44485e] text-gray-700 dark:text-[#acabc1] border border-gray-200 dark:border-[#44485e] hover:bg-gray-200 dark:hover:bg-[#4a4e6a]'
+            }`}
+            title={users.map(u => `${u.name} (${u.email})`).join('\n')}
+          >
+            <span className="text-base leading-none">{emoji}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
