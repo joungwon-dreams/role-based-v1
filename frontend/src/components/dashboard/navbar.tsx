@@ -10,6 +10,7 @@ import { useLocale } from "@/lib/i18n"
 import { useAuth } from "@/hooks/useAuth"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useRouter } from "next/navigation"
 
 export function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false)
@@ -20,6 +21,7 @@ export function Navbar() {
   const { isCollapsed, isHovered, toggleMobileMenu } = useSidebar()
   const { locale, setLocale } = useLocale()
   const { user, logout } = useAuth()
+  const router = useRouter()
 
   React.useEffect(() => {
     setMounted(true)
@@ -219,7 +221,13 @@ export function Navbar() {
                   />
                 </div>
                 <div className="p-2">
-                  <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e]">
+                  <button
+                    onClick={() => {
+                      router.push('/profile')
+                      setIsProfileOpen(false)
+                    }}
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e]"
+                  >
                     <User className="h-4 w-4" />
                     <span>My Profile</span>
                   </button>
