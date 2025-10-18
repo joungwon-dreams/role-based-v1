@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { router, protectedProcedure, requirePermission } from '../trpc';
 import { users, userRoles } from '../../db/schema';
 import { TRPCError } from '@trpc/server';
-import { eq } from 'drizzle-orm';
+import { eq, count, sql } from 'drizzle-orm';
 
 export const userRouter = router({
   /**
@@ -129,34 +129,45 @@ export const userRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      // Get total count
-      const totalCount = await ctx.db.$count(users);
+      // Get paginated users using basic select query
+      const allUsers = await ctx.db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          image: users.image,
+          emailVerified: users.emailVerified,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        })
+        .from(users)
+        .limit(input.limit)
+        .offset(input.offset)
+        .orderBy(users.createdAt);
 
-      // Get paginated users
-      const allUsers = await ctx.db.query.users.findMany({
-        limit: input.limit,
-        offset: input.offset,
-        with: {
-          userRoles: {
-            with: {
-              role: true,
-            },
-          },
-        },
-        orderBy: (users, { desc }) => [desc(users.createdAt)],
-      });
+      // Get roles for each user separately
+      const usersWithRoles = await Promise.all(
+        allUsers.map(async (user) => {
+          const roles = await ctx.db
+            .select({ roleName: userRoles.roleId })
+            .from(userRoles)
+            .where(eq(userRoles.userId, user.id));
+
+          return {
+            ...user,
+            roles: roles.map((r) => r.roleName),
+          };
+        })
+      );
+
+      // Get total count separately
+      const countResult = await ctx.db
+        .select({ count: sql<number>`count(*)` })
+        .from(users);
+      const totalCount = Number(countResult[0]?.count || 0);
 
       return {
-        users: allUsers.map((user: any) => ({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          emailVerified: user.emailVerified,
-          roles: user.userRoles.map((ur: any) => ur.role.name),
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        })),
+        users: usersWithRoles,
         total: totalCount,
       };
     }),

@@ -76,9 +76,13 @@ export function MessageModal({
   const [selectedRecipient, setSelectedRecipient] = useState<string>('')
 
   // Get list of users for recipient selection
-  const { data: users = [] } = trpc.user.list.useQuery(undefined, {
-    enabled: open && !message, // Only fetch when composing new message
-  })
+  const { data: userListData } = trpc.user.list.useQuery(
+    { limit: 100, offset: 0 },
+    {
+      enabled: open && !message, // Only fetch when composing new message
+    }
+  )
+  const users = userListData?.users || []
 
   const {
     register,
