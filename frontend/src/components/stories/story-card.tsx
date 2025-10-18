@@ -237,29 +237,24 @@ export function StoryCard({
                   <span>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
                 </div>
               )}
-              {reactions.map(({ emoji, users }) => (
-                <div key={emoji} className="relative group">
-                  <div className="flex items-center gap-1 cursor-pointer">
-                    <span className="text-sm">{emoji}</span>
-                  </div>
-                  {/* Hover tooltip */}
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 min-w-[200px]">
-                    <div className="bg-gray-900 dark:bg-gray-800 text-white rounded-lg shadow-lg p-2 max-h-[200px] overflow-y-auto">
-                      {users.map((user, idx) => (
-                        <div key={idx} className="flex items-center gap-2 py-1 text-xs">
-                          <div className="h-6 w-6 rounded-full bg-gradient-to-r from-[#7367f0] to-[#9e95f5] text-white font-semibold text-[9px] flex items-center justify-center">
-                            {user.name.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{user.name}</span>
-                            <span className="text-gray-300 text-[10px]">{user.email}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {reactions.map(({ emoji, users }) => {
+                const hasReacted = users.some(u => u.userId === currentUserId)
+
+                return (
+                  <button
+                    key={emoji}
+                    onClick={() => handleEmotionSelect(emoji)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm transition-colors ${
+                      hasReacted
+                        ? 'bg-[#7367f0]/10 text-[#7367f0] border border-[#7367f0]/30'
+                        : 'bg-gray-100 dark:bg-[#44485e] text-gray-700 dark:text-[#acabc1] border border-gray-200 dark:border-[#44485e] hover:bg-gray-200 dark:hover:bg-[#4a4e6a]'
+                    }`}
+                    title={users.map(u => `${u.name} (${u.email})`).join('\n')}
+                  >
+                    <span className="text-base leading-none">{emoji}</span>
+                  </button>
+                )
+              })}
             </div>
             {commentsCount > 0 && (
               <span>{commentsCount} {commentsCount === 1 ? 'comment' : 'comments'}</span>
