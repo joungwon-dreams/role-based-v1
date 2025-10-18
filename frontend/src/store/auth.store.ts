@@ -52,10 +52,19 @@ class AuthStore {
 
   // Update: No longer stores tokens in localStorage (they're in HttpOnly cookies)
   setUser(user: AuthState['user']) {
-    this.state = { user };
+    // Map 'id' to 'userId' for backwards compatibility
+    const normalizedUser = user ? {
+      userId: (user as any).id || user.userId,
+      email: user.email,
+      name: user.name,
+      roles: user.roles,
+      permissions: user.permissions,
+    } : null;
 
-    if (typeof window !== 'undefined' && user) {
-      localStorage.setItem('user', JSON.stringify(user));
+    this.state = { user: normalizedUser };
+
+    if (typeof window !== 'undefined' && normalizedUser) {
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
     }
 
     this.notifyListeners();
