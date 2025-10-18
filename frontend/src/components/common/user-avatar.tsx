@@ -199,7 +199,7 @@ export function UserAvatar({
 
       {/* Hover Menu */}
       {showMenu && showHoverMenu && !isCurrentUser && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-48 rounded-lg border border-gray-200 dark:border-[#44485e] bg-white dark:bg-[#2f3349] shadow-lg">
+        <div className="absolute left-0 top-full mt-0 z-50 w-48 rounded-lg border border-gray-200 dark:border-[#44485e] bg-white dark:bg-[#2f3349] shadow-lg">
           <div className="p-2">
             <button
               onClick={handleViewProfile}
