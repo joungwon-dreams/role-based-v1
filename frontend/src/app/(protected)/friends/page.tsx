@@ -15,14 +15,14 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Plus, Filter, Users, UserPlus, UserMinus, UserCheck, UserX, Send } from 'lucide-react'
+import { Plus, Filter, Users, UserPlus, UserMinus, UserCheck, UserX, Send, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { Badge } from '@/components/ui/badge'
 
-type FilterType = 'all' | 'requests' | 'suggestions'
+type FilterType = 'all' | 'requests' | 'sent' | 'suggestions'
 
 export default function FriendsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
@@ -37,6 +37,11 @@ export default function FriendsPage() {
       refetchOnMount: true,
     })
 
+  const { data: sentRequests = [], refetch: refetchSentRequests } =
+    trpc.connections.getSentRequests.useQuery(undefined, {
+      refetchOnMount: true,
+    })
+
   const { data: suggested = [], refetch: refetchSuggested } = trpc.connections.getSuggested.useQuery(
     { limit: 12 },
     {
@@ -47,11 +52,22 @@ export default function FriendsPage() {
   const sendRequest = trpc.connections.sendRequest.useMutation({
     onSuccess: () => {
       refetchSuggested()
-      refetchRequests()
+      refetchSentRequests()
       toast.success('Friend request sent')
     },
     onError: error => {
       toast.error(error.message || 'Failed to send friend request')
+    },
+  })
+
+  const cancelRequest = trpc.connections.cancelRequest.useMutation({
+    onSuccess: () => {
+      refetchSentRequests()
+      refetchSuggested()
+      toast.success('Friend request cancelled')
+    },
+    onError: error => {
+      toast.error(error.message || 'Failed to cancel friend request')
     },
   })
 
@@ -106,6 +122,13 @@ export default function FriendsPage() {
           items: pendingRequests,
           type: 'requests' as const,
         }
+      case 'sent':
+        return {
+          title: 'Sent Requests',
+          count: sentRequests.length,
+          items: sentRequests,
+          type: 'sent' as const,
+        }
       case 'suggestions':
         return {
           title: 'Suggested Friends',
@@ -128,6 +151,7 @@ export default function FriendsPage() {
   const filterOptions: { value: FilterType; label: string; count?: number }[] = [
     { value: 'all', label: 'My Friends', count: friends.length },
     { value: 'requests', label: 'Requests', count: pendingRequests.length },
+    { value: 'sent', label: 'Sent', count: sentRequests.length },
     { value: 'suggestions', label: 'Suggestions', count: suggested.length },
   ]
 
@@ -174,6 +198,8 @@ export default function FriendsPage() {
                         className={`ml-2 px-2 py-0 text-xs ${
                           option.value === 'requests'
                             ? 'bg-[#ff4c51] text-white border-[#ff4c51]'
+                            : option.value === 'sent'
+                            ? 'bg-[#ff9f43] text-white border-[#ff9f43]'
                             : 'bg-gray-100 dark:bg-[#44485e] text-gray-700 dark:text-[#acabc1] border-gray-200 dark:border-[#44485e]'
                         }`}
                       >
@@ -220,6 +246,8 @@ export default function FriendsPage() {
                     <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-[#44485e] flex items-center justify-center">
                       {displayData.type === 'requests' ? (
                         <UserPlus className="h-8 w-8 text-gray-400 dark:text-[#acabc1]" />
+                      ) : displayData.type === 'sent' ? (
+                        <Clock className="h-8 w-8 text-gray-400 dark:text-[#acabc1]" />
                       ) : displayData.type === 'suggestions' ? (
                         <Users className="h-8 w-8 text-gray-400 dark:text-[#acabc1]" />
                       ) : (
@@ -229,6 +257,8 @@ export default function FriendsPage() {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                       {displayData.type === 'requests'
                         ? 'No pending requests'
+                        : displayData.type === 'sent'
+                        ? 'No sent requests'
                         : displayData.type === 'suggestions'
                         ? 'No suggestions available'
                         : 'No friends yet'}
@@ -236,11 +266,13 @@ export default function FriendsPage() {
                     <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-4">
                       {displayData.type === 'requests'
                         ? "You don't have any friend requests at the moment"
+                        : displayData.type === 'sent'
+                        ? "You haven't sent any friend requests yet"
                         : displayData.type === 'suggestions'
                         ? 'Check back later for friend suggestions'
                         : 'Start connecting with people you know!'}
                     </p>
-                    {displayData.type !== 'requests' && (
+                    {displayData.type !== 'requests' && displayData.type !== 'sent' && (
                       <Button
                         onClick={() => setActiveFilter('suggestions')}
                         variant="outline"
@@ -372,6 +404,48 @@ export default function FriendsPage() {
                             >
                               <UserCheck className="w-4 h-4 mr-2" />
                               Accept
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                  {displayData.type === 'sent' &&
+                    (displayData.items as typeof sentRequests).map(request => (
+                      <div
+                        key={request.id}
+                        className="rounded-lg bg-white dark:bg-[#2f3349] p-6 transition-colors"
+                        style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-4 flex-1">
+                            <UserAvatar
+                              userId={request.addresseeId}
+                              name={request.addresseeName}
+                              email={request.addresseeEmail}
+                              image={request.addresseeImage}
+                              size="lg"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 dark:text-white">
+                                {request.addresseeName || request.addresseeEmail}
+                              </h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Sent {new Date(request.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="ml-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => cancelRequest.mutate({ connectionId: request.id })}
+                              disabled={cancelRequest.isPending}
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Cancel
                             </Button>
                           </div>
                         </div>
