@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { UserAvatar } from '@/components/common/user-avatar'
 
 const messageFormSchema = z.object({
   recipientId: z.string().min(1, 'Recipient is required'),
@@ -157,23 +158,48 @@ export function MessageModal({
               To
             </Label>
             {isViewMode ? (
-              <Input
-                value={isSender ? message.recipientName || message.recipientEmail || 'Unknown' : message.senderName || message.senderEmail || 'Unknown'}
-                disabled
-                className="bg-gray-50 dark:bg-[#25293c] border-gray-200 dark:border-[#44485e]"
-              />
+              <div className="bg-gray-50 dark:bg-[#25293c] border border-gray-200 dark:border-[#44485e] rounded-md p-3">
+                <UserAvatar
+                  userId={isSender ? message.recipientId : message.senderId}
+                  name={isSender ? message.recipientName : message.senderName}
+                  email={isSender ? message.recipientEmail : message.senderEmail}
+                  size="md"
+                  showEmail={true}
+                  showHoverMenu={false}
+                />
+              </div>
             ) : (
               <>
                 <Select value={selectedRecipient} onValueChange={handleRecipientChange}>
-                  <SelectTrigger className="border-gray-200 dark:border-[#44485e]">
-                    <SelectValue placeholder="Select recipient" />
+                  <SelectTrigger className="border-gray-200 dark:border-[#44485e] h-auto min-h-[44px]">
+                    {selectedRecipient ? (
+                      <div className="w-full">
+                        <UserAvatar
+                          userId={selectedRecipient}
+                          name={users.find(u => u.id === selectedRecipient)?.name}
+                          email={users.find(u => u.id === selectedRecipient)?.email}
+                          size="md"
+                          showEmail={true}
+                          showHoverMenu={false}
+                        />
+                      </div>
+                    ) : (
+                      <SelectValue placeholder="Select recipient" />
+                    )}
                   </SelectTrigger>
                   <SelectContent>
                     {users
                       .filter(user => user.id !== currentUserId) // Don't show current user
                       .map(user => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name || user.email}
+                        <SelectItem key={user.id} value={user.id} className="h-auto py-2">
+                          <UserAvatar
+                            userId={user.id}
+                            name={user.name}
+                            email={user.email}
+                            size="md"
+                            showEmail={true}
+                            showHoverMenu={false}
+                          />
                         </SelectItem>
                       ))}
                   </SelectContent>
