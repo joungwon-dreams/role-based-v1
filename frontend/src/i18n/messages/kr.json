@@ -53,12 +53,7 @@
       "sent": "보낸편지함",
       "compose": "작성"
     },
-    "connections": {
-      "title": "인맥",
-      "myNetwork": "내 네트워크",
-      "findPeople": "사람 찾기",
-      "requests": "요청"
-    },
+    "friends": "친구",
     "notifications": "알림",
     "teams": {
       "title": "팀",

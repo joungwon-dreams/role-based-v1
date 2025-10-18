@@ -53,12 +53,7 @@
       "sent": "Sent",
       "compose": "Compose"
     },
-    "connections": {
-      "title": "Connections",
-      "myNetwork": "My Network",
-      "findPeople": "Find People",
-      "requests": "Requests"
-    },
+    "friends": "Friends",
     "notifications": "Notifications",
     "teams": {
       "title": "Teams",
