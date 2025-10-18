@@ -86,9 +86,9 @@ export function UserAvatar({
 
       <div className="flex flex-col min-w-0">
         <p className={`font-medium text-gray-900 dark:text-white leading-tight truncate ${textSizeClasses[size]}`}>
-          {name || 'Unknown User'}
+          {displayName}
         </p>
-        {showEmail && email && (
+        {showEmail && email && name && (
           <p className={`text-gray-500 dark:text-[#acabc1] leading-tight truncate ${size === 'sm' ? 'text-[11px]' : size === 'md' ? 'text-xs' : 'text-sm'}`}>
             {email}
           </p>
