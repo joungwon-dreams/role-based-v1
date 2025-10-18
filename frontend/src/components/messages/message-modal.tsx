@@ -58,6 +58,7 @@ interface MessageModalProps {
     readAt: Date | null
     createdAt: Date
   } | null
+  initialRecipientId?: string
   onSend: (data: MessageFormData) => void
   onDelete?: () => void
   isLoading?: boolean
@@ -68,6 +69,7 @@ export function MessageModal({
   open,
   onOpenChange,
   message,
+  initialRecipientId,
   onSend,
   onDelete,
   isLoading = false,
@@ -109,12 +111,17 @@ export function MessageModal({
         setValue('content', message.content)
         setSelectedRecipient(message.recipientId)
       } else {
-        // Compose mode - clear form
+        // Compose mode - clear form and optionally pre-fill recipient
         reset()
-        setSelectedRecipient('')
+        if (initialRecipientId) {
+          setSelectedRecipient(initialRecipientId)
+          setValue('recipientId', initialRecipientId)
+        } else {
+          setSelectedRecipient('')
+        }
       }
     }
-  }, [open, message, reset, setValue])
+  }, [open, message, initialRecipientId, reset, setValue])
 
   const onSubmit = (data: MessageFormData) => {
     onSend(data)

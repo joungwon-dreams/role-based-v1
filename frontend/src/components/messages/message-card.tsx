@@ -62,26 +62,22 @@ export function MessageCard({
               name={otherUserName}
               email={otherUserEmail}
               size="lg"
-              showEmail={false}
+              showEmail={true}
+              showHoverMenu={true}
             />
 
-            {/* User Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                  {otherUserEmail}
-                </p>
-                {!message.isRead && isRecipient && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#7367f0] text-white">
-                    New
-                  </span>
-                )}
-                {isSender && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-[#44485e] text-gray-700 dark:text-[#acabc1]">
-                    Sent
-                  </span>
-                )}
-              </div>
+            {/* Status Badges */}
+            <div className="flex items-center gap-2">
+              {!message.isRead && isRecipient && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#7367f0] text-white">
+                  New
+                </span>
+              )}
+              {isSender && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-[#44485e] text-gray-700 dark:text-[#acabc1]">
+                  Sent
+                </span>
+              )}
             </div>
           </div>
 

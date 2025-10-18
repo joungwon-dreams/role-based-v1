@@ -15,6 +15,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Plus, Filter, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { trpc } from '@/lib/trpc/react'
@@ -27,10 +28,12 @@ import { authStore } from '@/store/auth.store'
 type FilterType = 'all' | 'unread' | 'sent'
 
 export default function MessagesPage() {
+  const searchParams = useSearchParams()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMessage, setSelectedMessage] = useState<any>(null)
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
+  const [initialRecipientId, setInitialRecipientId] = useState<string | undefined>(undefined)
 
   // Subscribe to auth store changes
   useEffect(() => {
@@ -44,6 +47,16 @@ export default function MessagesPage() {
 
     return unsubscribe
   }, [])
+
+  // Handle query parameter for pre-filled recipient
+  useEffect(() => {
+    const toUserId = searchParams.get('to')
+    if (toUserId) {
+      setInitialRecipientId(toUserId)
+      setSelectedMessage(null)
+      setIsModalOpen(true)
+    }
+  }, [searchParams])
 
   // tRPC queries and mutations
   const { data: messages = [], refetch } = trpc.messages.list.useQuery(
@@ -92,6 +105,7 @@ export default function MessagesPage() {
   // Handle compose new message
   const handleComposeNew = useCallback(() => {
     setSelectedMessage(null)
+    setInitialRecipientId(undefined)
     setIsModalOpen(true)
   }, [])
 
@@ -265,6 +279,7 @@ export default function MessagesPage() {
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
           message={selectedMessage}
+          initialRecipientId={initialRecipientId}
           onSend={handleSendMessage}
           onDelete={selectedMessage && selectedMessage.senderId === currentUserId ? () => handleDeleteMessage(selectedMessage.id) : undefined}
           isLoading={createMutation.isPending || deleteMutation.isPending}
