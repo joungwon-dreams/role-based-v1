@@ -9,6 +9,7 @@
 
 import { Mail, MailOpen, Trash2, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { UserAvatar } from '@/components/common/user-avatar'
 
 interface MessageCardProps {
   message: {
@@ -40,22 +41,9 @@ export function MessageCard({
 }: MessageCardProps) {
   const isRecipient = message.recipientId === currentUserId
   const isSender = message.senderId === currentUserId
+  const otherUserId = isRecipient ? message.senderId : message.recipientId
   const otherUserName = isRecipient ? message.senderName : message.recipientName
   const otherUserEmail = isRecipient ? message.senderEmail : message.recipientEmail
-
-  // Get user initials for avatar
-  const getUserInitials = (name: string | null, email: string | null) => {
-    if (name) {
-      const names = name.trim().split(' ')
-      if (names.length >= 2) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
-      }
-      return name[0]?.toUpperCase() || '?'
-    }
-    return email?.[0]?.toUpperCase() || '?'
-  }
-
-  const initials = getUserInitials(otherUserName, otherUserEmail)
 
   return (
     <div
@@ -69,17 +57,20 @@ export function MessageCard({
         {/* Header - Sender/Recipient Info */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            {/* Avatar */}
-            <div className="h-12 w-12 rounded-full bg-[#7367f0] flex items-center justify-center text-white font-semibold">
-              {initials}
-            </div>
+            <UserAvatar
+              userId={otherUserId}
+              name={otherUserName}
+              email={otherUserEmail}
+              size="lg"
+              showEmail={false}
+            />
 
             {/* User Info */}
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {otherUserName || 'Unknown User'}
-                </h3>
+                <p className="text-sm text-gray-600 dark:text-[#acabc1]">
+                  {otherUserEmail}
+                </p>
                 {!message.isRead && isRecipient && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#7367f0] text-white">
                     New
@@ -91,9 +82,6 @@ export function MessageCard({
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                {otherUserEmail}
-              </p>
             </div>
           </div>
 
