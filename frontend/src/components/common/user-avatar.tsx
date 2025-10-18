@@ -90,8 +90,20 @@ export function UserAvatar({
     return colors[index % colors.length]
   }
 
-  const displayName = name || email || 'Unknown User'
-  const secondaryText = role || (showEmail && email && name ? email : null)
+  // Derive display name from name or email prefix
+  const getDisplayName = () => {
+    if (name) return name
+    if (email) {
+      // Extract name from email (e.g., "premium@willydreams.com" -> "Premium")
+      const emailPrefix = email.split('@')[0]
+      return emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+    }
+    return 'User'
+  }
+
+  const displayName = getDisplayName()
+  // Always show email as secondary text (unless role is provided)
+  const secondaryText = role || (showEmail && email ? email : null)
 
   return (
     <div className={cn('flex items-center gap-3', className)}>

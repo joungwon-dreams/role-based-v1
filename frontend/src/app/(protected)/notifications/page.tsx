@@ -274,7 +274,7 @@ export default function NotificationsPage() {
                                   name={userInfo.name}
                                   email={userInfo.email}
                                   size="md"
-                                  showEmail={false}
+                                  showEmail={true}
                                 />
                               ) : (
                                 // Show icon if no user info
