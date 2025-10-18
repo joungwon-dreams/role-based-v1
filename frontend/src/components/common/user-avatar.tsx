@@ -138,17 +138,20 @@ export function UserAvatar({
 
   const isFriend = friendStatus?.status === 'accepted'
 
-  const handleViewProfile = () => {
+  const handleViewProfile = (e: React.MouseEvent) => {
+    e.stopPropagation()
     router.push(`/profile/${userId}`)
     setShowMenu(false)
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = (e: React.MouseEvent) => {
+    e.stopPropagation()
     router.push(`/messages?to=${userId}`)
     setShowMenu(false)
   }
 
-  const handleAddFriend = () => {
+  const handleAddFriend = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (!isFriend) {
       addFriend.mutate({ userId: userId })
     }
@@ -202,21 +205,21 @@ export function UserAvatar({
         <div className="absolute left-0 top-full mt-0 z-50 w-48 rounded-lg border border-gray-200 dark:border-[#44485e] bg-white dark:bg-[#2f3349] shadow-lg">
           <div className="p-2">
             <button
-              onClick={handleViewProfile}
+              onClick={(e) => handleViewProfile(e)}
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
             >
               <User className="h-4 w-4" />
               <span>View Profile</span>
             </button>
             <button
-              onClick={handleSendMessage}
+              onClick={(e) => handleSendMessage(e)}
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
             >
               <MessageCircle className="h-4 w-4" />
               <span>Send Message</span>
             </button>
             <button
-              onClick={handleAddFriend}
+              onClick={(e) => handleAddFriend(e)}
               disabled={isFriend}
               className={cn(
                 'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',

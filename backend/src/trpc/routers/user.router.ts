@@ -78,7 +78,49 @@ export const userRouter = router({
     }),
 
   /**
-   * Get user by ID (requires permission)
+   * Get public user profile (any authenticated user can view)
+   * Accepts both UUID and email
+   */
+  getPublicProfile: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      let user;
+
+      // Check if input is an email
+      if (input.userId.includes('@')) {
+        user = await ctx.db.query.users.findFirst({
+          where: eq(users.email, input.userId),
+        });
+      } else {
+        user = await ctx.db.query.users.findFirst({
+          where: eq(users.id, input.userId),
+        });
+      }
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        bio: user.bio,
+        jobTitle: user.jobTitle,
+        company: user.company,
+        location: user.location,
+        website: user.website,
+        bannerImage: user.bannerImage,
+        createdAt: user.createdAt,
+      };
+    }),
+
+  /**
+   * Get user by ID (requires permission - admin only)
    */
   getById: requirePermission('user:read:all')
     .input(z.object({ userId: z.string().uuid() }))
