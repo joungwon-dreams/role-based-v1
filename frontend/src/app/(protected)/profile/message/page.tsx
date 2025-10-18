@@ -7,7 +7,7 @@
 
 'use client'
 
-import { UserAvatar } from "@/components/user/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { Search, Send, Paperclip, Mic, Phone, Video, MoreVertical } from "lucide-react"
 
 const chats = [
@@ -51,6 +51,7 @@ export default function MessagePage() {
               <div className="p-6 border-b border-gray-200 dark:border-[#44485e]">
                 <div className="mb-4">
                   <UserAvatar
+                    userId="john-doe-id"
                     name="John Doe"
                     email="john.doe@example.com"
                     size="lg"
@@ -82,9 +83,10 @@ export default function MessagePage() {
                         }`}
                       >
                         <UserAvatar
+                          userId={chat.email}
                           name={chat.name}
                           email={chat.email}
-                          avatar={chat.avatar}
+                          avatarUrl={chat.avatar}
                           size="md"
                           showOnlineStatus={chat.online}
                         />
@@ -103,9 +105,10 @@ export default function MessagePage() {
                         className="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-[#44485e] cursor-pointer transition-colors"
                       >
                         <UserAvatar
+                          userId={contact.name}
                           name={contact.name}
-                          email={contact.role}
-                          avatar={contact.avatar}
+                          role={contact.role}
+                          avatarUrl={contact.avatar}
                           size="md"
                           showOnlineStatus={contact.online}
                         />
@@ -126,9 +129,10 @@ export default function MessagePage() {
               {/* Chat Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-[#44485e]">
                 <UserAvatar
+                  userId="felecia.rower@example.com"
                   name="Felecia Rower"
-                  email="NextJS developer"
-                  avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=felecia"
+                  role="NextJS developer"
+                  avatarUrl="https://api.dicebear.com/7.x/avataaars/svg?seed=felecia"
                   size="md"
                   showOnlineStatus={true}
                 />

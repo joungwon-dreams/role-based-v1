@@ -1,21 +1,32 @@
 /**
  * User Avatar Component
  *
- * Reusable component to display user avatar with name and email
+ * Unified reusable component to display user avatar with name and email
  * Used across the application for consistent user representation
+ *
+ * Features:
+ * - Multiple sizes (sm, md, lg)
+ * - Online status indicator (optional)
+ * - Fallback to initials if no avatar
+ * - Gradient background based on userId
+ * - Dark mode support
+ * - Role/email display options
  */
 
 'use client'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
 
 interface UserAvatarProps {
   userId: string
   name?: string | null
-  email?: string
+  email?: string | null
   avatarUrl?: string | null
+  role?: string
   size?: 'sm' | 'md' | 'lg'
   showEmail?: boolean
+  showOnlineStatus?: boolean
   className?: string
 }
 
@@ -31,13 +42,21 @@ const textSizeClasses = {
   lg: 'text-sm',
 }
 
+const onlineIndicatorSizes = {
+  sm: 'h-2 w-2',
+  md: 'h-2.5 w-2.5',
+  lg: 'h-3 w-3',
+}
+
 export function UserAvatar({
   userId,
   name,
   email,
   avatarUrl,
+  role,
   size = 'md',
   showEmail = true,
+  showOnlineStatus = false,
   className = '',
 }: UserAvatarProps) {
   // Generate initials from name or email
@@ -72,25 +91,42 @@ export function UserAvatar({
   }
 
   const displayName = name || email || 'Unknown User'
+  const secondaryText = role || (showEmail && email && name ? email : null)
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <Avatar className={sizeClasses[size]}>
-        {avatarUrl ? (
-          <AvatarImage src={avatarUrl} alt={displayName} />
-        ) : null}
-        <AvatarFallback className={`bg-gradient-to-r ${getAvatarColor()} text-white font-semibold text-[11px]`}>
-          {getInitials()}
-        </AvatarFallback>
-      </Avatar>
+    <div className={cn('flex items-center gap-3', className)}>
+      <div className="relative flex-shrink-0">
+        <Avatar className={sizeClasses[size]}>
+          {avatarUrl ? (
+            <AvatarImage src={avatarUrl} alt={displayName} />
+          ) : null}
+          <AvatarFallback className={`bg-gradient-to-r ${getAvatarColor()} text-white font-semibold text-[11px]`}>
+            {getInitials()}
+          </AvatarFallback>
+        </Avatar>
+
+        {/* Online Status Indicator */}
+        {showOnlineStatus && (
+          <span className={cn(
+            'absolute bottom-0 right-0 bg-green-500 border-2 border-white dark:border-[#2f3349] rounded-full',
+            onlineIndicatorSizes[size]
+          )} />
+        )}
+      </div>
 
       <div className="flex flex-col min-w-0">
-        <p className={`font-medium text-gray-900 dark:text-white leading-tight truncate ${textSizeClasses[size]}`}>
+        <p className={cn(
+          'font-medium text-gray-900 dark:text-white leading-tight truncate',
+          textSizeClasses[size]
+        )}>
           {displayName}
         </p>
-        {showEmail && email && name && (
-          <p className={`text-gray-500 dark:text-[#acabc1] leading-tight truncate ${size === 'sm' ? 'text-[11px]' : size === 'md' ? 'text-xs' : 'text-sm'}`}>
-            {email}
+        {secondaryText && (
+          <p className={cn(
+            'text-gray-500 dark:text-[#acabc1] leading-tight truncate',
+            size === 'sm' ? 'text-[11px]' : size === 'md' ? 'text-xs' : 'text-sm'
+          )}>
+            {secondaryText}
           </p>
         )}
       </div>
