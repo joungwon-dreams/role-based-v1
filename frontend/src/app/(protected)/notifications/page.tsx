@@ -15,8 +15,33 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
+import { UserAvatar } from '@/components/common/user-avatar'
 
 type FilterType = 'all' | 'unread' | 'read'
+
+// Extract user info from notification message
+const extractUserInfo = (message: string): { userId: string; name: string | null; email: string | null } | null => {
+  // Pattern: "email wants to..." or "name (email) wants to..." or "email liked..."
+  const emailMatch = message.match(/^([^\s@]+@[^\s@]+\.[^\s@]+)/);
+  if (emailMatch) {
+    const email = emailMatch[1];
+    // Try to extract name if format is "name (email)"
+    const nameMatch = message.match(/^(.+?)\s*\(([^\s@]+@[^\s@]+\.[^\s@]+)\)/);
+    if (nameMatch) {
+      return {
+        userId: email, // Using email as fallback userId
+        name: nameMatch[1].trim(),
+        email: nameMatch[2]
+      };
+    }
+    return {
+      userId: email,
+      name: null,
+      email: email
+    };
+  }
+  return null;
+};
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -237,57 +262,76 @@ export default function NotificationsPage() {
                       style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
                     >
                       <div className="flex items-start gap-4">
-                        {/* Icon */}
-                        <div className={`p-2 rounded-full bg-gray-100 dark:bg-[#44485e] ${getNotificationColor(notification.type)}`}>
-                          {getNotificationIcon(notification.type)}
-                        </div>
+                        {(() => {
+                          const userInfo = extractUserInfo(notification.message);
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <h3 className={`font-semibold ${!notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-[#acabc1]'}`}>
-                                {notification.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-[#acabc1] mt-1">
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                              </p>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center gap-2">
-                              {!notification.isRead && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    markAsRead.mutate({ id: notification.id })
-                                  }}
-                                  disabled={markAsRead.isPending}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
+                          return (
+                            <>
+                              {userInfo ? (
+                                // Show UserAvatar if we can extract user info
+                                <UserAvatar
+                                  userId={userInfo.userId}
+                                  name={userInfo.name}
+                                  email={userInfo.email}
+                                  size="md"
+                                  showEmail={false}
+                                />
+                              ) : (
+                                // Show icon if no user info
+                                <div className={`p-2 rounded-full bg-gray-100 dark:bg-[#44485e] ${getNotificationColor(notification.type)}`}>
+                                  {getNotificationIcon(notification.type)}
+                                </div>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteNotification.mutate({ id: notification.id })
-                                }}
-                                disabled={deleteNotification.isPending}
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <h3 className={`font-semibold ${!notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-[#acabc1]'}`}>
+                                      {notification.title}
+                                    </h3>
+                                    <p className="text-sm text-gray-600 dark:text-[#acabc1] mt-1">
+                                      {notification.message}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                    </p>
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex items-center gap-2">
+                                    {!notification.isRead && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          markAsRead.mutate({ id: notification.id })
+                                        }}
+                                        disabled={markAsRead.isPending}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <Check className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        deleteNotification.mutate({ id: notification.id })
+                                      }}
+                                      disabled={deleteNotification.isPending}
+                                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
