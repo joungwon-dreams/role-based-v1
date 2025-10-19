@@ -20,10 +20,11 @@ import { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { User, MessageCircle, UserPlus, Check } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
+import { UserProfileModal } from './user-profile-modal'
+import { MessageModal, type MessageFormData } from '../messages/message-modal'
 
 interface UserAvatarProps {
   userId: string
@@ -69,7 +70,9 @@ export function UserAvatar({
   className = '',
 }: UserAvatarProps) {
   const [showMenu, setShowMenu] = useState(false)
-  const router = useRouter()
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showMessageModal, setShowMessageModal] = useState(false)
+  const [messageRecipientId, setMessageRecipientId] = useState<string | undefined>(undefined)
   const { user: currentUser } = useAuth()
 
   // Check if this is the current user's avatar
@@ -90,6 +93,19 @@ export function UserAvatar({
       toast.error(error.message || 'Failed to send friend request')
     }
   })
+
+  // Send message mutation
+  const sendMessage = trpc.messages.create.useMutation({
+    onSuccess: () => {
+      toast.success('Message sent successfully')
+      setShowMessageModal(false)
+      setMessageRecipientId(undefined)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to send message')
+    }
+  })
+
   // Generate initials from name or email
   const getInitials = () => {
     if (name) {
@@ -140,14 +156,24 @@ export function UserAvatar({
 
   const handleViewProfile = (e: React.MouseEvent) => {
     e.stopPropagation()
-    router.push(`/profile/${userId}`)
+    setShowProfileModal(true)
     setShowMenu(false)
   }
 
   const handleSendMessage = (e: React.MouseEvent) => {
     e.stopPropagation()
-    router.push(`/messages?to=${userId}`)
+    setMessageRecipientId(userId)
+    setShowMessageModal(true)
     setShowMenu(false)
+  }
+
+  const handleSendMessageFromModal = (recipientId: string) => {
+    setMessageRecipientId(recipientId)
+    setShowMessageModal(true)
+  }
+
+  const handleMessageSubmit = (data: MessageFormData) => {
+    sendMessage.mutate(data)
   }
 
   const handleAddFriend = (e: React.MouseEvent) => {
@@ -243,6 +269,24 @@ export function UserAvatar({
           </div>
         </div>
       )}
+
+      {/* Profile Modal */}
+      <UserProfileModal
+        userId={userId}
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
+        onSendMessage={handleSendMessageFromModal}
+      />
+
+      {/* Message Modal */}
+      <MessageModal
+        open={showMessageModal}
+        onOpenChange={setShowMessageModal}
+        initialRecipientId={messageRecipientId}
+        onSend={handleMessageSubmit}
+        isLoading={sendMessage.isPending}
+        currentUserId={currentUser?.userId}
+      />
     </div>
   )
 }
