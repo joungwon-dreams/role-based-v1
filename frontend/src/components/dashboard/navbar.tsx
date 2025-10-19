@@ -178,9 +178,9 @@ export function Navbar() {
             className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-[#44485e] transition-colors"
           >
             {theme === "dark" ? (
-              <Sun className="h-5 w-5 text-gray-600 dark:text-[#acabc1]" />
+              <Moon className="h-5 w-5 text-gray-600 dark:text-[#acabc1]" />
             ) : (
-              <Moon className="h-5 w-5 text-gray-600" />
+              <Sun className="h-5 w-5 text-gray-600" />
             )}
           </button>
         )}
