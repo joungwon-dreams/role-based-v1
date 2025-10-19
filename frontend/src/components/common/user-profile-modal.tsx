@@ -27,7 +27,6 @@ import {
   Calendar,
   Briefcase,
   Building,
-  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -114,13 +113,6 @@ export function UserProfileModal({
         <DialogDescription className="sr-only">View user profile information and send messages or friend requests</DialogDescription>
         {/* Banner */}
         <div className="h-32 bg-gradient-to-r from-[#7367f0] to-[#9e95f5] relative">
-          {/* Close button */}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 z-10 rounded-full p-1 bg-white/20 hover:bg-white/30 transition-colors"
-          >
-            <X className="h-5 w-5 text-white" />
-          </button>
         </div>
 
         {/* User Info */}
