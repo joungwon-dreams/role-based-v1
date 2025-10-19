@@ -76,6 +76,8 @@ export function UserProfileModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px] bg-white dark:bg-[#2f3349]">
+          <DialogTitle className="sr-only">Loading Profile</DialogTitle>
+          <DialogDescription className="sr-only">Loading user profile information</DialogDescription>
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-gray-500 dark:text-[#acabc1]">Loading...</div>
           </div>
@@ -88,6 +90,8 @@ export function UserProfileModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px] bg-white dark:bg-[#2f3349]">
+          <DialogTitle className="sr-only">User Not Found</DialogTitle>
+          <DialogDescription className="sr-only">The requested user profile could not be found</DialogDescription>
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
