@@ -15,7 +15,10 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Users, Settings, UserPlus, Crown, Shield, Eye } from 'lucide-react'
+import {
+  ArrowLeft, Users, Settings, UserPlus, Crown, Shield, Eye,
+  Calendar, FileText, MessageSquare, ArrowRight
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { trpc } from '@/lib/trpc/react'
@@ -231,8 +234,95 @@ export default function TeamDetailPage() {
           </div>
         </div>
 
+        {/* Quick Actions - Team Features */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Calendar */}
+          <button
+            onClick={() => router.push(`/calendar?team=${teamId}`)}
+            className="rounded-lg bg-white dark:bg-[#2f3349] p-5 transition-all hover:shadow-lg group text-left"
+            style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#7367f0] group-hover:translate-x-1 transition-all" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+              Team Calendar
+            </h3>
+            <p className="text-xs text-gray-600 dark:text-[#acabc1]">
+              View and manage team events
+            </p>
+          </button>
+
+          {/* Stories */}
+          <button
+            onClick={() => router.push(`/stories?team=${teamId}`)}
+            className="rounded-lg bg-white dark:bg-[#2f3349] p-5 transition-all hover:shadow-lg group text-left"
+            style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#7367f0] group-hover:translate-x-1 transition-all" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+              Team Stories
+            </h3>
+            <p className="text-xs text-gray-600 dark:text-[#acabc1]">
+              Share updates and news
+            </p>
+          </button>
+
+          {/* Members */}
+          <button
+            onClick={() => {
+              // Scroll to members section
+              document.getElementById('members-section')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="rounded-lg bg-white dark:bg-[#2f3349] p-5 transition-all hover:shadow-lg group text-left"
+            style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#7367f0] group-hover:translate-x-1 transition-all" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+              Team Members
+            </h3>
+            <p className="text-xs text-gray-600 dark:text-[#acabc1]">
+              Manage team members
+            </p>
+          </button>
+
+          {/* Messages */}
+          <button
+            onClick={() => router.push(`/messages?team=${teamId}`)}
+            className="rounded-lg bg-white dark:bg-[#2f3349] p-5 transition-all hover:shadow-lg group text-left"
+            style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <MessageSquare className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#7367f0] group-hover:translate-x-1 transition-all" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+              Team Messages
+            </h3>
+            <p className="text-xs text-gray-600 dark:text-[#acabc1]">
+              Team communication
+            </p>
+          </button>
+        </div>
+
         {/* Members List */}
         <div
+          id="members-section"
           className="rounded-lg bg-white dark:bg-[#2f3349] p-6 transition-colors"
           style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
         >
