@@ -69,7 +69,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
                 // Redirect to signin page after a short delay
                 setTimeout(() => {
-                  window.location.href = '/auth/signin';
+                  window.location.href = '/signin';
                 }, 1500);
 
                 return {};
