@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc';
-import { calendarEvents, teamMembers, users } from '../../../db/schema/index';
+import { calendarEvents, teamMembers, users, teams } from '../../../db/schema/index';
 import { eq, and, desc } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 
@@ -62,14 +62,19 @@ export const teamCalendarRouter = router({
           name: users.name,
           email: users.email,
         },
+        team: {
+          id: teams.id,
+          name: teams.name,
+        },
       })
       .from(calendarEvents)
       .leftJoin(users, eq(calendarEvents.createdBy, users.id))
+      .leftJoin(teams, eq(calendarEvents.teamId, teams.id))
       .where(and(eq(calendarEvents.teamId, input.teamId), eq(calendarEvents.scope, 'team')))
       .orderBy(calendarEvents.startTime);
 
     // Transform to FullCalendar format
-    return events.map(({ event, creator }) => ({
+    return events.map(({ event, creator, team }) => ({
       id: event.id,
       title: event.title,
       start: event.startTime,
@@ -84,6 +89,7 @@ export const teamCalendarRouter = router({
         visibility: event.visibility,
         createdBy: creator?.name || null,
         createdByEmail: creator?.email || null,
+        teamName: team?.name || null,
       },
       classNames: [`event-${(event.label || 'business').toLowerCase()}`, 'team-event'],
     }));

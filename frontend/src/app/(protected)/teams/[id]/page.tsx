@@ -27,6 +27,7 @@ import { authStore } from '@/store/auth.store'
 import { useLocale } from '@/lib/i18n'
 import { StoryCard } from '@/components/stories/story-card'
 import { StoryModal, type StoryFormData } from '@/components/stories/story-modal'
+import { TeamCalendarView } from '@/components/calendar/team-calendar-view'
 
 type TabType = 'stories' | 'calendar' | 'members' | 'photos' | 'settings'
 
@@ -133,8 +134,8 @@ export default function TeamPage() {
     if (selectedStory?.id) {
       // Update existing story
       updateStoryMutation.mutate({
+        id: selectedStory.id,
         teamId,
-        storyId: selectedStory.id,
         data,
       })
     } else {
@@ -149,8 +150,8 @@ export default function TeamPage() {
   const handleDeleteStory = () => {
     if (selectedStory?.id) {
       deleteStoryMutation.mutate({
+        id: selectedStory.id,
         teamId,
-        storyId: selectedStory.id,
       })
     }
   }
@@ -390,6 +391,11 @@ export default function TeamPage() {
                     currentUserId={currentUserId}
                     currentUserName={currentUserName}
                     currentUserEmail={currentUserEmail}
+                    onEdit={() => handleOpenStoryModal(story)}
+                    onDelete={() => {
+                      setSelectedStory(story)
+                      handleDeleteStory()
+                    }}
                   />
                 ))}
               </div>
@@ -417,32 +423,7 @@ export default function TeamPage() {
         )}
 
         {/* Calendar Tab */}
-        {activeTab === 'calendar' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t('team.teamCalendar')}
-              </h2>
-              <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
-                <Calendar className="w-4 h-4 mr-2" />
-                {t('team.addEvent')}
-              </Button>
-            </div>
-
-            <div
-              className="rounded-lg bg-white dark:bg-[#2f3349] p-12 text-center transition-colors"
-              style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
-            >
-              <Calendar className="w-16 h-16 text-gray-400 dark:text-[#acabc1] mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t('team.teamCalendar')}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                {t('team.calendarShare')}
-              </p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'calendar' && <TeamCalendarView teamId={teamId} />}
 
         {/* Members Tab */}
         {activeTab === 'members' && (
