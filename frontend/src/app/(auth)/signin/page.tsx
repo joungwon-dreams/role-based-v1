@@ -90,7 +90,7 @@ export default function SigninPage() {
 
       toast.error(errorMessage, {
         description: errorDescription,
-        duration: 10000,
+        duration: 5000,
       });
     } finally {
       setIsLoading(false);
