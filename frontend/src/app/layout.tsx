@@ -4,6 +4,7 @@ import "./globals.css";
 import { TRPCProvider } from "@/lib/trpc/react";
 import { ThemeProvider } from "next-themes";
 import { LocaleProvider } from "@/lib/i18n";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,7 @@ export default function RootLayout({
               {children}
             </TRPCProvider>
           </LocaleProvider>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>
