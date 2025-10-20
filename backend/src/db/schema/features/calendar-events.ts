@@ -1,22 +1,33 @@
 import { pgTable, uuid, varchar, text, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
 import { users } from '../core/users';
+import { teams } from './teams';
+import { contentScopeEnum, visibilityEnum } from '../enums';
 
 /**
  * Calendar Events Table
  *
- * Stores user calendar events with support for:
+ * Stores calendar events with support for both personal and team events:
  * - Event categorization (label)
  * - Guest management
  * - All-day and timed events
  * - External URLs
+ * - Personal vs Team scope
+ * - Visibility control
  *
- * Based on Vuexy calendar design
+ * Based on Vuexy calendar design with Teams integration
  */
 export const calendarEvents = pgTable('calendar_events', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
+
+  // Team integration fields
+  scope: contentScopeEnum('scope').notNull().default('personal'),
+  teamId: uuid('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  visibility: visibilityEnum('visibility').notNull().default('private'),
+  createdBy: uuid('created_by').references(() => users.id), // For team events
+
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   location: varchar('location', { length: 255 }),

@@ -36,6 +36,8 @@ export * from './features/connections';
 export * from './features/tasks';
 export * from './features/teams';
 export * from './features/team-members';
+export * from './features/team-invites';
+export * from './features/team-channels';
 export * from './features/projects';
 export * from './features/notifications';
 export * from './features/translations';

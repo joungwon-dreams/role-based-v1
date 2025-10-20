@@ -38,6 +38,17 @@ export const permissionActionEnum = pgEnum('permission_action', [
 // Permission scope enum
 export const permissionScopeEnum = pgEnum('permission_scope', ['own', 'team', 'all']);
 
+// Content scope enum (for personal vs team content)
+export const contentScopeEnum = pgEnum('content_scope', ['personal', 'team']);
+
+// Visibility enum (for content visibility control)
+export const visibilityEnum = pgEnum('visibility', [
+  'private',  // Only visible to the owner
+  'friends',  // Visible to friends
+  'team',     // Visible to team members
+  'public',   // Visible to everyone
+]);
+
 // User activity type enum
 export const userActivityTypeEnum = pgEnum('user_activity_type', [
   'signin',
@@ -75,6 +86,10 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'calendar_event',
   'mention',
   'team_invite',
+  'team_post',           // New team post created
+  'team_event',          // New team calendar event
+  'team_announcement',   // Team announcement
+  'team_member_join',    // New member joined team
   'admin_alert',
 ]);
 
@@ -101,4 +116,12 @@ export const translationStatusEnum = pgEnum('translation_status', [
   'pending',
   'approved',
   'published',
+]);
+
+// Team invite status enum
+export const teamInviteStatusEnum = pgEnum('team_invite_status', [
+  'pending',
+  'accepted',
+  'rejected',
+  'expired',
 ]);

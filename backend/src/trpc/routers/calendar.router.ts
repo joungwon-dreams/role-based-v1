@@ -27,12 +27,14 @@ const calendarEventSchema = z.object({
 export const calendarRouter = router({
   /**
    * Get all calendar events for the authenticated user
+   * NOTE: This router only returns personal events (scope='personal')
+   * For team events, use the team.calendar router
    */
   list: protectedProcedure.query(async ({ ctx }) => {
     const events = await ctx.db
       .select()
       .from(calendarEvents)
-      .where(eq(calendarEvents.userId, ctx.user.userId))
+      .where(and(eq(calendarEvents.userId, ctx.user.userId), eq(calendarEvents.scope, 'personal')))
       .orderBy(calendarEvents.startTime);
 
     // Transform to FullCalendar format
@@ -70,6 +72,10 @@ export const calendarRouter = router({
         location: input.location,
         url: input.url || null,
         guests: input.guests || [],
+        // Team integration fields - all personal events
+        scope: 'personal',
+        visibility: 'private',
+        createdBy: ctx.user.userId,
       })
       .returning();
 
@@ -93,6 +99,8 @@ export const calendarRouter = router({
 
   /**
    * Update an existing calendar event
+   * NOTE: Only updates personal events (scope='personal')
+   * Scope and visibility cannot be changed through this router
    */
   update: protectedProcedure
     .input(
@@ -102,14 +110,20 @@ export const calendarRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if event exists and belongs to user
+      // Check if event exists, belongs to user, and is personal
       const [existingEvent] = await ctx.db
         .select()
         .from(calendarEvents)
-        .where(and(eq(calendarEvents.id, input.id), eq(calendarEvents.userId, ctx.user.userId)));
+        .where(
+          and(
+            eq(calendarEvents.id, input.id),
+            eq(calendarEvents.userId, ctx.user.userId),
+            eq(calendarEvents.scope, 'personal')
+          )
+        );
 
       if (!existingEvent) {
-        throw new Error('Event not found');
+        throw new Error('Event not found or not a personal event');
       }
 
       // Prepare update object
@@ -130,7 +144,13 @@ export const calendarRouter = router({
       const [updatedEvent] = await ctx.db
         .update(calendarEvents)
         .set(updateData)
-        .where(and(eq(calendarEvents.id, input.id), eq(calendarEvents.userId, ctx.user.userId)))
+        .where(
+          and(
+            eq(calendarEvents.id, input.id),
+            eq(calendarEvents.userId, ctx.user.userId),
+            eq(calendarEvents.scope, 'personal')
+          )
+        )
         .returning();
 
       // Return in FullCalendar format
@@ -153,19 +173,34 @@ export const calendarRouter = router({
 
   /**
    * Delete a calendar event
+   * NOTE: Only deletes personal events (scope='personal')
    */
   delete: protectedProcedure.input(z.object({ id: z.string().uuid() })).mutation(async ({ ctx, input }) => {
-    // Check if event exists and belongs to user
+    // Check if event exists, belongs to user, and is personal
     const [existingEvent] = await ctx.db
       .select()
       .from(calendarEvents)
-      .where(and(eq(calendarEvents.id, input.id), eq(calendarEvents.userId, ctx.user.userId)));
+      .where(
+        and(
+          eq(calendarEvents.id, input.id),
+          eq(calendarEvents.userId, ctx.user.userId),
+          eq(calendarEvents.scope, 'personal')
+        )
+      );
 
     if (!existingEvent) {
-      throw new Error('Event not found');
+      throw new Error('Event not found or not a personal event');
     }
 
-    await ctx.db.delete(calendarEvents).where(and(eq(calendarEvents.id, input.id), eq(calendarEvents.userId, ctx.user.userId)));
+    await ctx.db
+      .delete(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.id, input.id),
+          eq(calendarEvents.userId, ctx.user.userId),
+          eq(calendarEvents.scope, 'personal')
+        )
+      );
 
     return { success: true, id: input.id };
   }),

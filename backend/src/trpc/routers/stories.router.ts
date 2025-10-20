@@ -19,6 +19,8 @@ const storySchema = z.object({
 export const storiesRouter = router({
   /**
    * Get all published stories (feed)
+   * NOTE: This router only returns personal stories (scope='personal')
+   * For team stories, use the team.stories router
    */
   list: protectedProcedure
     .input(
@@ -33,14 +35,18 @@ export const storiesRouter = router({
 
       let whereConditions;
       if (filter === 'own') {
-        whereConditions = eq(stories.authorId, ctx.user.userId);
+        whereConditions = and(eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal'));
       } else if (filter === 'published') {
-        whereConditions = eq(stories.isPublished, true);
+        whereConditions = and(eq(stories.isPublished, true), eq(stories.scope, 'personal'));
       } else if (filter === 'drafts') {
-        whereConditions = and(eq(stories.authorId, ctx.user.userId), eq(stories.isPublished, false));
+        whereConditions = and(
+          eq(stories.authorId, ctx.user.userId),
+          eq(stories.isPublished, false),
+          eq(stories.scope, 'personal')
+        );
       } else {
-        // all - show published stories OR user's own stories
-        whereConditions = undefined; // Will be filtered in code
+        // all - show published stories OR user's own stories (personal only)
+        whereConditions = eq(stories.scope, 'personal');
       }
 
       const allStories = await ctx.db
@@ -80,9 +86,13 @@ export const storiesRouter = router({
 
   /**
    * Get single story by ID
+   * NOTE: Only returns personal stories (scope='personal')
    */
   getById: protectedProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ ctx, input }) => {
-    const [story] = await ctx.db.select().from(stories).where(eq(stories.id, input.id));
+    const [story] = await ctx.db
+      .select()
+      .from(stories)
+      .where(and(eq(stories.id, input.id), eq(stories.scope, 'personal')));
 
     if (!story) {
       throw new Error('Story not found');
@@ -119,6 +129,10 @@ export const storiesRouter = router({
         slug: input.slug,
         isPublished: input.isPublished,
         publishedAt: input.isPublished ? new Date() : null,
+        // Team integration fields - all personal stories
+        scope: 'personal',
+        visibility: input.isPublished ? 'public' : 'private',
+        isPinned: false,
       })
       .returning();
 
@@ -137,6 +151,8 @@ export const storiesRouter = router({
 
   /**
    * Update an existing story
+   * NOTE: Only updates personal stories (scope='personal')
+   * Scope and visibility are managed automatically
    */
   update: protectedProcedure
     .input(
@@ -146,11 +162,13 @@ export const storiesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if story exists and belongs to user
+      // Check if story exists, belongs to user, and is personal
       const [existingStory] = await ctx.db
         .select()
         .from(stories)
-        .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId)));
+        .where(
+          and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal'))
+        );
 
       if (!existingStory) {
         throw new Error('Story not found or you do not have permission to edit it');
@@ -166,6 +184,8 @@ export const storiesRouter = router({
       if (input.data.slug !== undefined) updateData.slug = input.data.slug;
       if (input.data.isPublished !== undefined) {
         updateData.isPublished = input.data.isPublished;
+        // Update visibility based on publish state
+        updateData.visibility = input.data.isPublished ? 'public' : 'private';
         // Set publishedAt when publishing for the first time
         if (input.data.isPublished && !existingStory.publishedAt) {
           updateData.publishedAt = new Date();
@@ -175,7 +195,9 @@ export const storiesRouter = router({
       const [updatedStory] = await ctx.db
         .update(stories)
         .set(updateData)
-        .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId)))
+        .where(
+          and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal'))
+        )
         .returning();
 
       return {
@@ -193,32 +215,41 @@ export const storiesRouter = router({
 
   /**
    * Delete a story
+   * NOTE: Only deletes personal stories (scope='personal')
    */
   delete: protectedProcedure.input(z.object({ id: z.string().uuid() })).mutation(async ({ ctx, input }) => {
-    // Check if story exists and belongs to user
+    // Check if story exists, belongs to user, and is personal
     const [existingStory] = await ctx.db
       .select()
       .from(stories)
-      .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId)));
+      .where(
+        and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal'))
+      );
 
     if (!existingStory) {
       throw new Error('Story not found or you do not have permission to delete it');
     }
 
-    await ctx.db.delete(stories).where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId)));
+    await ctx.db
+      .delete(stories)
+      .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal')));
 
     return { success: true, id: input.id };
   }),
 
   /**
    * Toggle publish status
+   * NOTE: Only toggles personal stories (scope='personal')
+   * Updates visibility automatically based on publish state
    */
   togglePublish: protectedProcedure.input(z.object({ id: z.string().uuid() })).mutation(async ({ ctx, input }) => {
-    // Check if story exists and belongs to user
+    // Check if story exists, belongs to user, and is personal
     const [existingStory] = await ctx.db
       .select()
       .from(stories)
-      .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId)));
+      .where(
+        and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal'))
+      );
 
     if (!existingStory) {
       throw new Error('Story not found or you do not have permission to edit it');
@@ -230,10 +261,13 @@ export const storiesRouter = router({
       .update(stories)
       .set({
         isPublished: newPublishState,
+        visibility: newPublishState ? 'public' : 'private',
         publishedAt: newPublishState && !existingStory.publishedAt ? new Date() : existingStory.publishedAt,
         updatedAt: new Date(),
       })
-      .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId)))
+      .where(
+        and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal'))
+      )
       .returning();
 
     return {
