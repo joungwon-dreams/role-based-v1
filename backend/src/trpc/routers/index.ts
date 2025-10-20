@@ -12,6 +12,10 @@ import { commentReactionsRouter } from './comment-reactions.router';
 import { messagesRouter } from './messages.router';
 import { connectionsRouter } from './connections.router';
 import { notificationsRouter } from './notifications.router';
+import { teamsRouter } from './team/teams.router';
+import { teamCalendarRouter } from './team/calendar.router';
+import { teamStoriesRouter } from './team/stories.router';
+import { teamChannelsRouter } from './team/channels.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -27,6 +31,13 @@ export const appRouter = router({
   messages: messagesRouter,
   connections: connectionsRouter,
   notifications: notificationsRouter,
+  // Team namespace - all team-related routers
+  team: router({
+    teams: teamsRouter,
+    calendar: teamCalendarRouter,
+    stories: teamStoriesRouter,
+    channels: teamChannelsRouter,
+  }),
 });
 
 export type AppRouter = typeof appRouter;
