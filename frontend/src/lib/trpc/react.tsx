@@ -7,6 +7,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '@/types/trpc';
 import superjson from 'superjson';
 import { isTokenExpired, refreshAccessToken } from '@/utils/token';
+import { toast } from 'sonner';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -55,11 +56,22 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
                 token = result.accessToken;
                 console.log('✅ Token refreshed successfully');
               } else {
-                console.warn('⚠️ Failed to refresh token, user may need to re-login');
+                console.warn('⚠️ Failed to refresh token, user needs to re-login');
                 // Clear tokens if refresh failed
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
                 localStorage.removeItem('user');
+
+                // Show toast message and redirect to signin
+                toast.error('토큰이 만료되었습니다. 다시 로그인해주세요.', {
+                  description: 'Token expired. Please login again.',
+                });
+
+                // Redirect to signin page after a short delay
+                setTimeout(() => {
+                  window.location.href = '/auth/signin';
+                }, 1500);
+
                 return {};
               }
             }
