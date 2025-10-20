@@ -150,6 +150,7 @@ export function StoryModal({
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
+        showClose={false}
         className="w-full sm:max-w-[540px] p-0 bg-white dark:bg-[#2f3349] border-gray-200 dark:border-[#44485e]"
       >
         <form onSubmit={handleSubmit} className="h-full flex flex-col">

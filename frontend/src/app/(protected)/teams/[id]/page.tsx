@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import { authStore } from '@/store/auth.store'
 import { useLocale } from '@/lib/i18n'
 import { StoryCard } from '@/components/stories/story-card'
+import { StoryModal, type StoryFormData } from '@/components/stories/story-modal'
 
 type TabType = 'stories' | 'calendar' | 'members' | 'photos' | 'settings'
 
@@ -39,6 +40,8 @@ export default function TeamPage() {
   const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(undefined)
   const [activeTab, setActiveTab] = useState<TabType>((searchParams.get('tab') as TabType) || 'stories')
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false)
+  const [selectedStory, setSelectedStory] = useState<any>(null)
 
   // Subscribe to auth store
   useEffect(() => {
@@ -67,7 +70,7 @@ export default function TeamPage() {
   )
 
   // Fetch team stories
-  const { data: teamStories = [], isLoading: storiesLoading } = trpc.team.stories.list.useQuery(
+  const { data: teamStories = [], isLoading: storiesLoading, refetch: refetchStories } = trpc.team.stories.list.useQuery(
     { teamId, filter: 'all' },
     {
       enabled: !!teamId,
@@ -75,8 +78,81 @@ export default function TeamPage() {
     }
   )
 
+  // Story mutations
+  const createStoryMutation = trpc.team.stories.create.useMutation({
+    onSuccess: () => {
+      refetchStories()
+      toast.success('Story created successfully')
+      setIsStoryModalOpen(false)
+      setSelectedStory(null)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create story')
+    },
+  })
+
+  const updateStoryMutation = trpc.team.stories.update.useMutation({
+    onSuccess: () => {
+      refetchStories()
+      toast.success('Story updated successfully')
+      setIsStoryModalOpen(false)
+      setSelectedStory(null)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update story')
+    },
+  })
+
+  const deleteStoryMutation = trpc.team.stories.delete.useMutation({
+    onSuccess: () => {
+      refetchStories()
+      toast.success('Story deleted successfully')
+      setIsStoryModalOpen(false)
+      setSelectedStory(null)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete story')
+    },
+  })
+
   const handleBack = () => {
     router.push('/teams')
+  }
+
+  // Story modal handlers
+  const handleOpenStoryModal = (story?: any) => {
+    if (story) {
+      setSelectedStory(story)
+    } else {
+      setSelectedStory(null)
+    }
+    setIsStoryModalOpen(true)
+  }
+
+  const handleSaveStory = (data: StoryFormData) => {
+    if (selectedStory?.id) {
+      // Update existing story
+      updateStoryMutation.mutate({
+        teamId,
+        storyId: selectedStory.id,
+        data,
+      })
+    } else {
+      // Create new story
+      createStoryMutation.mutate({
+        teamId,
+        ...data,
+      })
+    }
+  }
+
+  const handleDeleteStory = () => {
+    if (selectedStory?.id) {
+      deleteStoryMutation.mutate({
+        teamId,
+        storyId: selectedStory.id,
+      })
+    }
   }
 
   const getRoleBadge = (role: string) => {
@@ -292,7 +368,10 @@ export default function TeamPage() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {t('team.teamStories')}
               </h2>
-              <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
+              <Button
+                onClick={() => handleOpenStoryModal()}
+                className="bg-[#7367f0] hover:bg-[#6658d3] text-white"
+              >
                 <FileText className="w-4 h-4 mr-2" />
                 {t('team.write')}
               </Button>
@@ -326,7 +405,10 @@ export default function TeamPage() {
                 <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-4">
                   {t('team.firstPostPrompt')}
                 </p>
-                <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
+                <Button
+                  onClick={() => handleOpenStoryModal()}
+                  className="bg-[#7367f0] hover:bg-[#6658d3] text-white"
+                >
                   {t('team.writeFirstPost')}
                 </Button>
               </div>
@@ -502,6 +584,16 @@ export default function TeamPage() {
           </div>
         )}
       </div>
+
+      {/* Story Modal */}
+      <StoryModal
+        open={isStoryModalOpen}
+        onOpenChange={setIsStoryModalOpen}
+        story={selectedStory}
+        onSave={handleSaveStory}
+        onDelete={selectedStory?.id ? handleDeleteStory : undefined}
+        isLoading={createStoryMutation.isPending || updateStoryMutation.isPending || deleteStoryMutation.isPending}
+      />
     </main>
   )
 }
