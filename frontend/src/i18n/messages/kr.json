@@ -190,5 +190,36 @@
       "updateError": "{entity} 업데이트에 실패했습니다",
       "deleteError": "{entity} 삭제에 실패했습니다"
     }
+  },
+  "team": {
+    "backToList": "팀 목록",
+    "invite": "초대",
+    "settings": "설정",
+    "members": "멤버",
+    "stories": "게시글",
+    "calendar": "일정",
+    "photos": "사진",
+    "write": "글쓰기",
+    "noStories": "아직 게시글이 없습니다",
+    "firstPostPrompt": "팀의 첫 번째 게시글을 작성해보세요!",
+    "writeFirstPost": "첫 게시글 작성하기",
+    "teamStories": "팀 게시글",
+    "teamMembers": "팀 멤버",
+    "inviteMembers": "멤버 초대",
+    "teamCalendar": "팀 일정",
+    "addEvent": "일정 추가",
+    "calendarShare": "팀원들과 일정을 공유하세요",
+    "teamPhotos": "팀 사진",
+    "uploadPhoto": "사진 업로드",
+    "photoAlbum": "팀 사진 앨범",
+    "sharePhotos": "팀원들과 사진을 공유하세요",
+    "teamSettings": "팀 설정",
+    "teamName": "팀 이름",
+    "teamDescription": "팀 설명",
+    "noDescription": "설명이 없습니다",
+    "createdAt": "생성일",
+    "editTeamInfo": "팀 정보 수정",
+    "memberCount": "{count} 멤버",
+    "noMembers": "멤버가 없습니다"
   }
 }

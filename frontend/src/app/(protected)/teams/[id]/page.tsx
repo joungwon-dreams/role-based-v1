@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge'
 import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
 import { authStore } from '@/store/auth.store'
+import { useLocale } from '@/lib/i18n'
 
 type TabType = 'stories' | 'calendar' | 'members' | 'photos' | 'settings'
 
@@ -31,6 +32,7 @@ export default function TeamPage() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useLocale()
   const teamId = params.id as string
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
   const [activeTab, setActiveTab] = useState<TabType>((searchParams.get('tab') as TabType) || 'stories')
@@ -146,10 +148,10 @@ export default function TeamPage() {
   }
 
   const tabs = [
-    { id: 'stories' as TabType, label: '게시글', icon: FileText },
-    { id: 'calendar' as TabType, label: '일정', icon: Calendar },
-    { id: 'members' as TabType, label: '멤버', icon: Users },
-    { id: 'photos' as TabType, label: '사진', icon: Image },
+    { id: 'stories' as TabType, label: t('team.stories'), icon: FileText },
+    { id: 'calendar' as TabType, label: t('team.calendar'), icon: Calendar },
+    { id: 'members' as TabType, label: t('team.members'), icon: Users },
+    { id: 'photos' as TabType, label: t('team.photos'), icon: Image },
   ]
 
   return (
@@ -181,7 +183,7 @@ export default function TeamPage() {
                 <div className="flex items-center gap-3 text-white/90 text-sm">
                   <span className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    {team.members?.length || 0} 멤버
+                    {t('team.memberCount', { count: String(team.members?.length || 0) })}
                   </span>
                   <span>•</span>
                   <span>{getRoleBadge(team.myRole)}</span>
@@ -198,7 +200,7 @@ export default function TeamPage() {
                 onClick={() => router.push('/teams')}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                팀 목록
+                {t('team.backToList')}
               </Button>
               {canManage && (
                 <>
@@ -208,7 +210,7 @@ export default function TeamPage() {
                     className="text-white hover:bg-white/20"
                   >
                     <UserPlus className="w-4 h-4 mr-2" />
-                    초대
+                    {t('team.invite')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -272,11 +274,11 @@ export default function TeamPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                팀 게시글
+                {t('team.teamStories')}
               </h2>
               <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
                 <FileText className="w-4 h-4 mr-2" />
-                글쓰기
+                {t('team.write')}
               </Button>
             </div>
 
@@ -287,13 +289,13 @@ export default function TeamPage() {
             >
               <FileText className="w-16 h-16 text-gray-400 dark:text-[#acabc1] mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                아직 게시글이 없습니다
+                {t('team.noStories')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-4">
-                팀의 첫 번째 게시글을 작성해보세요!
+                {t('team.firstPostPrompt')}
               </p>
               <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
-                첫 게시글 작성하기
+                {t('team.writeFirstPost')}
               </Button>
             </div>
           </div>
@@ -304,11 +306,11 @@ export default function TeamPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                팀 일정
+                {t('team.teamCalendar')}
               </h2>
               <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
                 <Calendar className="w-4 h-4 mr-2" />
-                일정 추가
+                {t('team.addEvent')}
               </Button>
             </div>
 
@@ -318,10 +320,10 @@ export default function TeamPage() {
             >
               <Calendar className="w-16 h-16 text-gray-400 dark:text-[#acabc1] mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                팀 일정 관리
+                {t('team.teamCalendar')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                팀원들과 일정을 공유하세요
+                {t('team.calendarShare')}
               </p>
             </div>
           </div>
@@ -332,12 +334,12 @@ export default function TeamPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                팀 멤버 ({team.members?.length || 0})
+                {t('team.teamMembers')} ({team.members?.length || 0})
               </h2>
               {canManage && (
                 <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
                   <UserPlus className="w-4 h-4 mr-2" />
-                  멤버 초대
+                  {t('team.inviteMembers')}
                 </Button>
               )}
             </div>
@@ -381,7 +383,7 @@ export default function TeamPage() {
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-gray-400 dark:text-[#acabc1] mx-auto mb-2" />
                     <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                      멤버가 없습니다
+                      {t('team.noMembers')}
                     </p>
                   </div>
                 )}
@@ -395,11 +397,11 @@ export default function TeamPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                팀 사진
+                {t('team.teamPhotos')}
               </h2>
               <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
                 <Image className="w-4 h-4 mr-2" />
-                사진 업로드
+                {t('team.uploadPhoto')}
               </Button>
             </div>
 
@@ -409,10 +411,10 @@ export default function TeamPage() {
             >
               <Image className="w-16 h-16 text-gray-400 dark:text-[#acabc1] mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                팀 사진 앨범
+                {t('team.photoAlbum')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-[#acabc1]">
-                팀원들과 사진을 공유하세요
+                {t('team.sharePhotos')}
               </p>
             </div>
           </div>
@@ -422,7 +424,7 @@ export default function TeamPage() {
         {activeTab === 'settings' && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              팀 설정
+              {t('team.teamSettings')}
             </h2>
 
             <div
@@ -432,23 +434,23 @@ export default function TeamPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    팀 이름
+                    {t('team.teamName')}
                   </label>
                   <p className="text-gray-900 dark:text-white">{team.name}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    팀 설명
+                    {t('team.teamDescription')}
                   </label>
                   <p className="text-gray-600 dark:text-[#acabc1]">
-                    {team.description || '설명이 없습니다'}
+                    {team.description || t('team.noDescription')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    생성일
+                    {t('team.createdAt')}
                   </label>
                   <p className="text-gray-600 dark:text-[#acabc1]">
                     {new Date(team.createdAt).toLocaleDateString('ko-KR')}
@@ -458,7 +460,7 @@ export default function TeamPage() {
                 {canManage && (
                   <div className="pt-4 border-t border-gray-200 dark:border-[#44485e]">
                     <Button variant="outline" className="border-gray-300 dark:border-[#44485e]">
-                      팀 정보 수정
+                      {t('team.editTeamInfo')}
                     </Button>
                   </div>
                 )}

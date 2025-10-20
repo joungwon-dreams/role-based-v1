@@ -190,5 +190,36 @@
       "updateError": "Failed to update {entity}",
       "deleteError": "Failed to delete {entity}"
     }
+  },
+  "team": {
+    "backToList": "Back to Teams",
+    "invite": "Invite",
+    "settings": "Settings",
+    "members": "Members",
+    "stories": "Stories",
+    "calendar": "Calendar",
+    "photos": "Photos",
+    "write": "Write",
+    "noStories": "No posts yet",
+    "firstPostPrompt": "Write your team's first post!",
+    "writeFirstPost": "Write First Post",
+    "teamStories": "Team Stories",
+    "teamMembers": "Team Members",
+    "inviteMembers": "Invite Members",
+    "teamCalendar": "Team Calendar",
+    "addEvent": "Add Event",
+    "calendarShare": "Share schedule with team members",
+    "teamPhotos": "Team Photos",
+    "uploadPhoto": "Upload Photo",
+    "photoAlbum": "Team Photo Album",
+    "sharePhotos": "Share photos with team members",
+    "teamSettings": "Team Settings",
+    "teamName": "Team Name",
+    "teamDescription": "Team Description",
+    "noDescription": "No description",
+    "createdAt": "Created",
+    "editTeamInfo": "Edit Team Info",
+    "memberCount": "{count} members",
+    "noMembers": "No members yet"
   }
 }
