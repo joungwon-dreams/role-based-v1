@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from '../trpc';
-import { users, accounts, userRoles, roles, permissions, rolePermissions } from '../../db/schema';
+import { users, accounts, userRoles, roles, permissions, rolePermissions, auditLogs } from '../../db/schema';
 import { hashPassword, comparePassword } from '../../utils/password';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../../utils/jwt';
 import { loginRateLimiter, signupRateLimiter } from '../../utils/rate-limiter';
@@ -111,6 +111,10 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { email, password } = input;
 
+      // Get client info for audit logging
+      const ipAddress = getClientIp(ctx.headers as any);
+      const userAgent = getUserAgent(ctx.headers as any);
+
       // Rate limiting check
       if (loginRateLimiter.isRateLimited(email)) {
         const resetTime = loginRateLimiter.getResetTime(email);
@@ -129,6 +133,18 @@ export const authRouter = router({
       });
 
       if (!user) {
+        // Record failed signin attempt - user not found
+        await ctx.db.insert(auditLogs).values({
+          userId: null, // No user ID since user doesn't exist
+          action: 'SIGNIN_FAILURE',
+          tableName: 'users',
+          recordId: null,
+          oldValues: null,
+          newValues: { email, reason: 'user_not_found' },
+          ipAddress,
+          userAgent,
+        });
+
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Invalid email or password',
@@ -141,6 +157,18 @@ export const authRouter = router({
       });
 
       if (!account || !account.password) {
+        // Record failed signin attempt - no account
+        await ctx.db.insert(auditLogs).values({
+          userId: user.id,
+          action: 'SIGNIN_FAILURE',
+          tableName: 'users',
+          recordId: user.id,
+          oldValues: null,
+          newValues: { email, reason: 'no_account' },
+          ipAddress,
+          userAgent,
+        });
+
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Invalid email or password',
@@ -150,11 +178,35 @@ export const authRouter = router({
       // Verify password
       const isValidPassword = await comparePassword(password, account.password);
       if (!isValidPassword) {
+        // Record failed signin attempt - invalid password
+        await ctx.db.insert(auditLogs).values({
+          userId: user.id,
+          action: 'SIGNIN_FAILURE',
+          tableName: 'users',
+          recordId: user.id,
+          oldValues: null,
+          newValues: { email, reason: 'invalid_password' },
+          ipAddress,
+          userAgent,
+        });
+
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Invalid email or password',
         });
       }
+
+      // Record successful signin attempt
+      await ctx.db.insert(auditLogs).values({
+        userId: user.id,
+        action: 'SIGNIN_SUCCESS',
+        tableName: 'users',
+        recordId: user.id,
+        oldValues: null,
+        newValues: { email },
+        ipAddress,
+        userAgent,
+      });
 
       // Get user roles and permissions using separate queries
       const userRolesData = await ctx.db.query.userRoles.findMany({

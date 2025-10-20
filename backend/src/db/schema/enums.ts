@@ -52,7 +52,13 @@ export const userActivityTypeEnum = pgEnum('user_activity_type', [
 ]);
 
 // Audit action enum
-export const auditActionEnum = pgEnum('audit_action', ['INSERT', 'UPDATE', 'DELETE']);
+export const auditActionEnum = pgEnum('audit_action', [
+  'INSERT',
+  'UPDATE',
+  'DELETE',
+  'SIGNIN_SUCCESS',
+  'SIGNIN_FAILURE',
+]);
 
 // Security list type enum
 export const securityListTypeEnum = pgEnum('security_list_type', ['ip', 'email']);
