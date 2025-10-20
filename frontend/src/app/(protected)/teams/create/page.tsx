@@ -13,9 +13,10 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Users } from 'lucide-react'
+import { ArrowLeft, Users, Lock } from 'lucide-react'
+import { authStore } from '@/store/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,6 +39,19 @@ export default function CreateTeamPage() {
     visibility: 'private' as 'private' | 'public',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
+
+  // Check if user has permission to create teams
+  useEffect(() => {
+    const user = authStore.getState().user
+    const canCreate = user?.permissions?.includes('team:create:own') || false
+    setHasPermission(canCreate)
+
+    if (!canCreate) {
+      toast.error('Only Premium users can create teams')
+      router.push('/teams')
+    }
+  }, [router])
 
   const createMutation = trpc.team.teams.create.useMutation({
     onSuccess: (data) => {
@@ -98,6 +112,24 @@ export default function CreateTeamPage() {
   const handleCancel = useCallback(() => {
     router.push('/teams')
   }, [router])
+
+  // Show loading state while checking permission
+  if (hasPermission === null) {
+    return (
+      <main className="pt-[5rem]">
+        <div className="py-6 max-w-3xl mx-auto px-3">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-[#acabc1]">Checking permissions...</p>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // Don't render form if no permission (will redirect)
+  if (!hasPermission) {
+    return null
+  }
 
   return (
     <main className="pt-[5rem]">

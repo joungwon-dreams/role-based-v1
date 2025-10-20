@@ -13,19 +13,34 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Plus, Users, Filter, ChevronRight } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { Plus, Users, Filter, ChevronRight, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { authStore } from '@/store/auth.store'
 
 type FilterType = 'all' | 'my-teams' | 'public'
 
 export default function TeamsPage() {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [canCreateTeam, setCanCreateTeam] = useState(false)
+
+  // Check if user has permission to create teams
+  useEffect(() => {
+    const checkPermission = () => {
+      const user = authStore.getState().user
+      const hasPermission = user?.permissions?.includes('team:create:own') || false
+      setCanCreateTeam(hasPermission)
+    }
+
+    checkPermission()
+    const unsubscribe = authStore.subscribe(checkPermission)
+    return unsubscribe
+  }, [])
 
   // tRPC queries
   const { data: teams = [], refetch, isLoading } = trpc.team.teams.list.useQuery(undefined, {
@@ -86,13 +101,28 @@ export default function TeamsPage() {
               style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
             >
               {/* Create Team Button */}
-              <Button
-                onClick={handleCreateTeam}
-                className="w-full bg-[#7367f0] hover:bg-[#6658d3] text-white mb-6"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Team
-              </Button>
+              {canCreateTeam ? (
+                <Button
+                  onClick={handleCreateTeam}
+                  className="w-full bg-[#7367f0] hover:bg-[#6658d3] text-white mb-6"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Team
+                </Button>
+              ) : (
+                <div className="mb-6">
+                  <Button
+                    disabled
+                    className="w-full bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed mb-2"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Premium Feature
+                  </Button>
+                  <p className="text-xs text-center text-gray-600 dark:text-[#acabc1]">
+                    Upgrade to Premium to create teams
+                  </p>
+                </div>
+              )}
 
               {/* Filters */}
               <div className="space-y-1">
@@ -167,14 +197,30 @@ export default function TeamsPage() {
                         : 'No teams available. Be the first to create a team!'}
                     </p>
                     {activeFilter === 'my-teams' || activeFilter === 'all' ? (
-                      <Button
-                        onClick={handleCreateTeam}
-                        variant="outline"
-                        className="border-[#7367f0] text-[#7367f0] hover:bg-[#7367f0]/10"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Your First Team
-                      </Button>
+                      canCreateTeam ? (
+                        <Button
+                          onClick={handleCreateTeam}
+                          variant="outline"
+                          className="border-[#7367f0] text-[#7367f0] hover:bg-[#7367f0]/10"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Your First Team
+                        </Button>
+                      ) : (
+                        <div className="text-center">
+                          <Button
+                            disabled
+                            variant="outline"
+                            className="border-gray-300 dark:border-gray-700 text-gray-400 cursor-not-allowed"
+                          >
+                            <Lock className="w-4 h-4 mr-2" />
+                            Premium Feature
+                          </Button>
+                          <p className="text-xs text-gray-600 dark:text-[#acabc1] mt-2">
+                            Upgrade to Premium to create teams
+                          </p>
+                        </div>
+                      )
                     ) : null}
                   </div>
                 </div>

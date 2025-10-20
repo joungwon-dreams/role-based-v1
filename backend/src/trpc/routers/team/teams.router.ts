@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { router, protectedProcedure } from '../../trpc';
+import { router, protectedProcedure, requirePermission } from '../../trpc';
 import { teams, teamMembers, teamInvites, users } from '../../../db/schema/index';
 import { eq, and, or, desc } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
@@ -13,8 +13,9 @@ import { TRPCError } from '@trpc/server';
 // Team validation schemas
 const teamSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens').optional(),
   description: z.string().optional(),
+  visibility: z.enum(['private', 'public']).default('private'),
 });
 
 const inviteSchema = z.object({
@@ -70,13 +71,16 @@ export const teamsRouter = router({
       name: team.name,
       slug: team.slug,
       description: team.description,
+      visibility: team.visibility,
       ownerId: team.ownerId,
       ownerName: owner?.name || null,
       ownerEmail: owner?.email || null,
-      myRole: membership.role,
+      memberRole: membership.role,
+      isMember: true,
       joinedAt: membership.joinedAt,
       createdAt: team.createdAt,
       updatedAt: team.updatedAt,
+      memberCount: 1, // TODO: Add actual member count query
     }));
   }),
 
@@ -155,17 +159,27 @@ export const teamsRouter = router({
   }),
 
   /**
-   * Create a new team
+   * Create a new team (Premium+ users only)
    */
-  create: protectedProcedure.input(teamSchema).mutation(async ({ ctx, input }) => {
-    // Check if slug is already taken
-    const [existing] = await ctx.db.select().from(teams).where(eq(teams.slug, input.slug));
+  create: requirePermission('team:create:own').input(teamSchema).mutation(async ({ ctx, input }) => {
+    // Auto-generate slug from name if not provided
+    let slug = input.slug || input.name.toLowerCase()
+      .replace(/\s+/g, '-')         // Replace spaces with hyphens
+      .replace(/[^a-z0-9-]/g, '')   // Remove non-alphanumeric except hyphens
+      .replace(/-+/g, '-')          // Replace multiple hyphens with single
+      .replace(/^-|-$/g, '');       // Remove leading/trailing hyphens
 
-    if (existing) {
-      throw new TRPCError({
-        code: 'CONFLICT',
-        message: 'Team slug already exists',
-      });
+    // Ensure slug is unique by appending number if needed
+    let slugCandidate = slug;
+    let counter = 1;
+    while (true) {
+      const [existing] = await ctx.db.select().from(teams).where(eq(teams.slug, slugCandidate));
+      if (!existing) {
+        slug = slugCandidate;
+        break;
+      }
+      slugCandidate = `${slug}-${counter}`;
+      counter++;
     }
 
     // Create team
@@ -173,8 +187,9 @@ export const teamsRouter = router({
       .insert(teams)
       .values({
         name: input.name,
-        slug: input.slug,
+        slug: slug,
         description: input.description,
+        visibility: input.visibility,
         ownerId: ctx.user.userId,
       })
       .returning();
