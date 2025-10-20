@@ -65,7 +65,33 @@ export default function SigninPage() {
       toast.success('Successfully signed in!');
       router.push('/dashboard');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign in');
+      // Extract error message from different error formats
+      let errorMessage = 'Failed to sign in';
+      let errorDescription = '';
+
+      if (error?.message) {
+        errorMessage = error.message;
+
+        // Provide Korean description based on common error messages
+        if (error.message.includes('Invalid credentials') || error.message.includes('Invalid email or password')) {
+          errorDescription = '이메일 또는 비밀번호가 올바르지 않습니다.';
+        } else if (error.message.includes('User not found')) {
+          errorDescription = '사용자를 찾을 수 없습니다.';
+        } else if (error.message.includes('Account is disabled') || error.message.includes('Account locked')) {
+          errorDescription = '계정이 비활성화되었습니다. 관리자에게 문의하세요.';
+        } else if (error.message.includes('Too many attempts')) {
+          errorDescription = '로그인 시도 횟수가 초과되었습니다. 잠시 후 다시 시도하세요.';
+        } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+          errorDescription = '네트워크 오류가 발생했습니다. 연결을 확인하세요.';
+        } else {
+          errorDescription = '로그인에 실패했습니다. 다시 시도해주세요.';
+        }
+      }
+
+      toast.error(errorMessage, {
+        description: errorDescription,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
