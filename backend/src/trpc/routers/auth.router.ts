@@ -248,9 +248,6 @@ export const authRouter = router({
       const csrfToken = generateCsrfToken();
 
       // Create session for real-time tracking
-      const ipAddress = getClientIp(ctx.headers as any);
-      const userAgent = getUserAgent(ctx.headers as any);
-
       await createSession({
         userId: user.id,
         refreshToken,
