@@ -25,6 +25,7 @@ import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
 import { authStore } from '@/store/auth.store'
 import { useLocale } from '@/lib/i18n'
+import { StoryCard } from '@/components/stories/story-card'
 
 type TabType = 'stories' | 'calendar' | 'members' | 'photos' | 'settings'
 
@@ -35,16 +36,22 @@ export default function TeamPage() {
   const { t } = useLocale()
   const teamId = params.id as string
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
+  const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined)
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(undefined)
   const [activeTab, setActiveTab] = useState<TabType>((searchParams.get('tab') as TabType) || 'stories')
 
   // Subscribe to auth store
   useEffect(() => {
     const user = authStore.getState().user
     setCurrentUserId(user?.userId)
+    setCurrentUserName(user?.name)
+    setCurrentUserEmail(user?.email)
 
     const unsubscribe = authStore.subscribe(() => {
       const user = authStore.getState().user
       setCurrentUserId(user?.userId)
+      setCurrentUserName(user?.name)
+      setCurrentUserEmail(user?.email)
     })
 
     return unsubscribe
@@ -56,6 +63,15 @@ export default function TeamPage() {
     {
       refetchOnMount: true,
       retry: false,
+    }
+  )
+
+  // Fetch team stories
+  const { data: teamStories = [], isLoading: storiesLoading } = trpc.team.stories.list.useQuery(
+    { teamId, filter: 'all' },
+    {
+      enabled: !!teamId,
+      refetchOnMount: true,
     }
   )
 
@@ -282,22 +298,39 @@ export default function TeamPage() {
               </Button>
             </div>
 
-            {/* Empty State */}
-            <div
-              className="rounded-lg bg-white dark:bg-[#2f3349] p-12 text-center transition-colors"
-              style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
-            >
-              <FileText className="w-16 h-16 text-gray-400 dark:text-[#acabc1] mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t('team.noStories')}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-4">
-                {t('team.firstPostPrompt')}
-              </p>
-              <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
-                {t('team.writeFirstPost')}
-              </Button>
-            </div>
+            {storiesLoading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-[#acabc1]">Loading stories...</p>
+              </div>
+            ) : teamStories.length > 0 ? (
+              <div className="space-y-6">
+                {teamStories.map((story) => (
+                  <StoryCard
+                    key={story.id}
+                    story={story}
+                    currentUserId={currentUserId}
+                    currentUserName={currentUserName}
+                    currentUserEmail={currentUserEmail}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
+                className="rounded-lg bg-white dark:bg-[#2f3349] p-12 text-center transition-colors"
+                style={{ boxShadow: '0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.12)' }}
+              >
+                <FileText className="w-16 h-16 text-gray-400 dark:text-[#acabc1] mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {t('team.noStories')}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-[#acabc1] mb-4">
+                  {t('team.firstPostPrompt')}
+                </p>
+                <Button className="bg-[#7367f0] hover:bg-[#6658d3] text-white">
+                  {t('team.writeFirstPost')}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
