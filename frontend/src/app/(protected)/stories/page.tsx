@@ -15,8 +15,15 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { Plus, Filter } from 'lucide-react'
+import { Plus, Filter, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
 import { StoryCard } from '@/components/stories/story-card'
@@ -25,11 +32,14 @@ import { Badge } from '@/components/ui/badge'
 import { authStore } from '@/store/auth.store'
 
 type FilterType = 'all' | 'own' | 'published' | 'drafts'
+type TeamFilterType = 'all' | 'published' | 'pinned'
 
 export default function StoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedStory, setSelectedStory] = useState<any>(null)
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [selectedTeam, setSelectedTeam] = useState<string>('personal') // 'personal' or teamId
+  const [teamFilter, setTeamFilter] = useState<TeamFilterType>('all')
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
   const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(undefined)
@@ -53,13 +63,30 @@ export default function StoriesPage() {
     return unsubscribe
   }, [])
 
-  // tRPC queries and mutations
-  const { data: stories = [], refetch } = trpc.stories.list.useQuery(
+  // tRPC queries
+  const { data: teams = [] } = trpc.team.teams.list.useQuery(undefined, {
+    refetchOnMount: true,
+  })
+
+  // Fetch stories based on selected team
+  const { data: personalStories = [], refetch: refetchPersonal } = trpc.stories.list.useQuery(
     { filter: activeFilter },
     {
+      enabled: selectedTeam === 'personal',
       refetchOnMount: true,
     }
   )
+
+  const { data: teamStories = [], refetch: refetchTeam } = trpc.team.stories.list.useQuery(
+    { teamId: selectedTeam, filter: teamFilter },
+    {
+      enabled: selectedTeam !== 'personal',
+      refetchOnMount: true,
+    }
+  )
+
+  const stories = selectedTeam === 'personal' ? personalStories : teamStories
+  const refetch = selectedTeam === 'personal' ? refetchPersonal : refetchTeam
 
   const createMutation = trpc.stories.create.useMutation({
     onSuccess: () => {
@@ -151,12 +178,21 @@ export default function StoriesPage() {
     [togglePublishMutation]
   )
 
-  const filterOptions: { value: FilterType; label: string; count?: number }[] = [
+  const personalFilterOptions: { value: FilterType; label: string }[] = [
     { value: 'all', label: 'All Stories' },
     { value: 'published', label: 'Published' },
     { value: 'own', label: 'My Stories' },
     { value: 'drafts', label: 'Drafts' },
   ]
+
+  const teamFilterOptions: { value: TeamFilterType; label: string }[] = [
+    { value: 'all', label: 'All Stories' },
+    { value: 'published', label: 'Published' },
+    { value: 'pinned', label: 'Pinned' },
+  ]
+
+  const filterOptions = selectedTeam === 'personal' ? personalFilterOptions : teamFilterOptions
+  const currentFilter = selectedTeam === 'personal' ? activeFilter : teamFilter
 
   return (
     <main className="pt-[5rem]">
@@ -177,6 +213,41 @@ export default function StoriesPage() {
                 Create Story
               </Button>
 
+              {/* Team/Scope Filter */}
+              <div className="mb-5">
+                <div className="flex items-center gap-2 px-1 mb-2">
+                  <Users className="w-4 h-4 text-gray-500 dark:text-[#acabc1]" />
+                  <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+                    Story Scope
+                  </span>
+                </div>
+                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                  <SelectTrigger className="w-full border-gray-300 dark:border-[#44485e] bg-white dark:bg-[#25293c] text-gray-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Personal Only</span>
+                        <span className="text-xs text-gray-600 dark:text-[#acabc1]">
+                          My personal stories
+                        </span>
+                      </div>
+                    </SelectItem>
+                    {teams.filter((team) => team.isMember).map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">{team.name}</span>
+                          <span className="text-xs text-gray-600 dark:text-[#acabc1]">
+                            Team stories
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Filters */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 dark:text-[#acabc1]">
@@ -187,22 +258,20 @@ export default function StoriesPage() {
                 {filterOptions.map((option) => (
                   <button
                     key={option.value}
-                    onClick={() => setActiveFilter(option.value)}
+                    onClick={() => {
+                      if (selectedTeam === 'personal') {
+                        setActiveFilter(option.value as FilterType)
+                      } else {
+                        setTeamFilter(option.value as TeamFilterType)
+                      }
+                    }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                      activeFilter === option.value
+                      currentFilter === option.value
                         ? 'bg-[#7367f0]/10 text-[#7367f0] font-medium'
                         : 'text-gray-700 dark:text-[#acabc1] hover:bg-gray-100 dark:hover:bg-[#44485e]'
                     }`}
                   >
                     <span>{option.label}</span>
-                    {option.count !== undefined && (
-                      <Badge
-                        variant="outline"
-                        className="ml-2 px-2 py-0 text-xs"
-                      >
-                        {option.count}
-                      </Badge>
-                    )}
                   </button>
                 ))}
               </div>
@@ -224,7 +293,9 @@ export default function StoriesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                    {filterOptions.find((f) => f.value === activeFilter)?.label}
+                    {selectedTeam === 'personal'
+                      ? filterOptions.find((f) => f.value === activeFilter)?.label
+                      : `${teams.find((t) => t.id === selectedTeam)?.name || 'Team'} - ${filterOptions.find((f) => f.value === teamFilter)?.label}`}
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-[#acabc1] mt-1">
                     {stories.length} {stories.length === 1 ? 'story' : 'stories'}

@@ -22,7 +22,14 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import listPlugin from '@fullcalendar/list'
 import interactionPlugin from '@fullcalendar/interaction'
 import { Button } from '@/components/ui/button'
-import { Plus, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { trpc } from '@/lib/trpc/react'
 import { toast } from 'sonner'
 import { EventModal } from '@/components/calendar/event-modal'
@@ -43,11 +50,29 @@ export default function CalendarPage() {
     'ETC',
   ])
   const [currentView, setCurrentView] = useState('dayGridMonth')
+  const [selectedTeam, setSelectedTeam] = useState<string>('personal') // 'personal' or teamId
 
-  // tRPC queries and mutations
-  const { data: events = [], refetch } = trpc.calendar.list.useQuery(undefined, {
+  // tRPC queries
+  const { data: teams = [] } = trpc.team.teams.list.useQuery(undefined, {
     refetchOnMount: true,
   })
+
+  // Fetch events based on selected team
+  const { data: personalEvents = [], refetch: refetchPersonal } = trpc.calendar.list.useQuery(undefined, {
+    enabled: selectedTeam === 'personal',
+    refetchOnMount: true,
+  })
+
+  const { data: teamEvents = [], refetch: refetchTeam } = trpc.team.calendar.unified.useQuery(
+    { teamId: selectedTeam },
+    {
+      enabled: selectedTeam !== 'personal',
+      refetchOnMount: true,
+    }
+  )
+
+  const events = selectedTeam === 'personal' ? personalEvents : teamEvents
+  const refetch = selectedTeam === 'personal' ? refetchPersonal : refetchTeam
 
   const createMutation = trpc.calendar.create.useMutation({
     onSuccess: () => {
@@ -204,6 +229,41 @@ export default function CalendarPage() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Event
               </Button>
+
+              {/* Team/Scope Filter */}
+              <div className="mb-5">
+                <div className="flex items-center gap-2 px-1 mb-2">
+                  <Users className="w-4 h-4 text-gray-500 dark:text-[#acabc1]" />
+                  <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+                    Calendar Scope
+                  </span>
+                </div>
+                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                  <SelectTrigger className="w-full border-gray-300 dark:border-[#44485e] bg-white dark:bg-[#25293c] text-gray-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Personal Only</span>
+                        <span className="text-xs text-gray-600 dark:text-[#acabc1]">
+                          My personal events
+                        </span>
+                      </div>
+                    </SelectItem>
+                    {teams.filter((team) => team.isMember).map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">{team.name}</span>
+                          <span className="text-xs text-gray-600 dark:text-[#acabc1]">
+                            Personal + Team events
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Inline Calendar */}
               <InlineCalendar onDateClick={handleInlineDateClick} />
