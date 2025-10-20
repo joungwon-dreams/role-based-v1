@@ -43,7 +43,7 @@ export default function RootLayout({
               {children}
             </TRPCProvider>
           </LocaleProvider>
-          <Toaster richColors position="top-right" />
+          <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>
     </html>
