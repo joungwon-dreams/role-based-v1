@@ -11,7 +11,7 @@
  */
 
 import { Redis } from 'ioredis';
-import { count, and, eq, sql } from 'drizzle-orm';
+import { count, and, eq, sql, inArray } from 'drizzle-orm';
 import { notifications, likes, comments, stories } from '../schema/index';
 
 // Redis 클라이언트 설정
@@ -657,6 +657,163 @@ export async function updateStoryAndInvalidateCache(storyId: string, data: any, 
   return updated;
 }
 
+// ============================================================================
+// TIER 3 OPTIMIZATIONS - Query Parallelization & Batch Operations
+// ============================================================================
+
+/**
+ * Query Parallelization Helper (TIER 3)
+ * 여러 독립적인 쿼리를 병렬로 실행하여 성능 향상
+ *
+ * @example
+ * const [user, stats, notifications] = await parallelQueries([
+ *   () => db.query.users.findFirst({ where: eq(users.id, userId) }),
+ *   () => getUserStats(userId),
+ *   () => getUnreadNotifications(userId)
+ * ]);
+ */
+export async function parallelQueries<T extends readonly unknown[]>(
+  queries: readonly (() => Promise<T[number]>)[]
+): Promise<T> {
+  const startTime = Date.now();
+
+  try {
+    const results = await Promise.all(queries.map((query) => query()));
+    const duration = Date.now() - startTime;
+
+    console.log(`[TIER 3] Parallel queries executed: ${queries.length} queries in ${duration}ms`);
+
+    return results as unknown as T;
+  } catch (error) {
+    console.error('[TIER 3] Parallel query error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Batch Update Helper (TIER 3)
+ * 여러 레코드를 한 번에 업데이트
+ *
+ * @example
+ * await batchUpdate(
+ *   db,
+ *   notifications,
+ *   ['id1', 'id2', 'id3'],
+ *   { isRead: true },
+ *   'id'
+ * );
+ */
+export async function batchUpdate<T>(
+  db: any,
+  table: any,
+  ids: string[],
+  updateData: Partial<T>,
+  idColumn: string = 'id'
+): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  const startTime = Date.now();
+
+  try {
+    const result = await db
+      .update(table)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(inArray(table[idColumn], ids));
+
+    const duration = Date.now() - startTime;
+    console.log(`[TIER 3] Batch update: ${ids.length} records in ${duration}ms`);
+
+    return ids.length;
+  } catch (error) {
+    console.error('[TIER 3] Batch update error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Batch Insert Helper (TIER 3)
+ * 여러 레코드를 한 번에 삽입
+ *
+ * @example
+ * await batchInsert(db, notifications, [
+ *   { userId: 'user1', message: 'msg1' },
+ *   { userId: 'user2', message: 'msg2' }
+ * ]);
+ */
+export async function batchInsert<T>(
+  db: any,
+  table: any,
+  records: T[]
+): Promise<number> {
+  if (records.length === 0) return 0;
+
+  const startTime = Date.now();
+
+  try {
+    await db.insert(table).values(records);
+
+    const duration = Date.now() - startTime;
+    console.log(`[TIER 3] Batch insert: ${records.length} records in ${duration}ms`);
+
+    return records.length;
+  } catch (error) {
+    console.error('[TIER 3] Batch insert error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Prefetch Next Page (TIER 3)
+ * 다음 페이지 데이터를 백그라운드에서 미리 캐시에 로드
+ *
+ * @example
+ * await prefetchNextPage(
+ *   CacheKeys.story('next-page'),
+ *   () => getStories({ cursor: nextCursor, limit: 20 }),
+ *   CacheTTL.SHORT
+ * );
+ */
+export async function prefetchNextPage<T>(
+  cacheKey: string,
+  fetcher: () => Promise<T>,
+  ttl: number = CacheTTL.SHORT
+): Promise<void> {
+  // 백그라운드에서 실행 (await 안 함)
+  setTimeout(async () => {
+    try {
+      const data = await fetcher();
+      if (data !== null && data !== undefined) {
+        await redis.setex(cacheKey, ttl, JSON.stringify(data));
+        console.log(`[TIER 3] Prefetched next page: ${cacheKey}`);
+      }
+    } catch (error) {
+      console.error('[TIER 3] Prefetch error:', error);
+    }
+  }, 100); // 100ms 후 실행
+}
+
+/**
+ * Cached Aggregate Query (TIER 3)
+ * 집계 쿼리 결과를 장시간 캐싱 (Materialized View 패턴)
+ *
+ * @example
+ * const stats = await cachedAggregate(
+ *   'team:123:stats',
+ *   () => getTeamStatistics('123'),
+ *   CacheTTL.VERY_LONG
+ * );
+ */
+export async function cachedAggregate<T>(
+  cacheKey: string,
+  aggregateQuery: () => Promise<T>,
+  ttl: number = CacheTTL.VERY_LONG
+): Promise<T> {
+  return cacheAside(cacheKey, aggregateQuery, ttl);
+}
+
 export default {
   redis,
   CacheKeys,
@@ -665,8 +822,17 @@ export default {
   writeThrough,
   invalidateCache,
   invalidateRelatedCache,
+  invalidateRelatedCacheGranular,
+  withTransaction,
+  warmupUserCache,
   warmupCache,
   getCacheStats,
   getCacheHitRate,
   cleanupExpiredCache,
+  // TIER 3 optimizations
+  parallelQueries,
+  batchUpdate,
+  batchInsert,
+  prefetchNextPage,
+  cachedAggregate,
 };
