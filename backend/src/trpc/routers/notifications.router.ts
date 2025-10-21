@@ -33,7 +33,7 @@ const createNotificationSchema = z.object({
   type: z.enum(notificationTypeValues),
   title: z.string().min(1).max(255),
   message: z.string().min(1),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.string(), z.any()).optional(),
   actionUrl: z.string().optional(),
 });
 

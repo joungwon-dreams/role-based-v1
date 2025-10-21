@@ -11,8 +11,8 @@
  */
 
 import { Redis } from 'ioredis';
-import { count, and, eq } from 'drizzle-orm';
-import { notifications } from '../schema/index';
+import { count, and, eq, sql } from 'drizzle-orm';
+import { notifications, likes, comments, stories } from '../schema/index';
 
 // Redis 클라이언트 설정
 export const redis = new Redis({
