@@ -3,42 +3,49 @@ import { router, protectedProcedure, requirePermission } from '../trpc';
 import { users, userRoles } from '../../db/schema';
 import { TRPCError } from '@trpc/server';
 import { eq, count, sql } from 'drizzle-orm';
+import { cacheAside, invalidateRelatedCache, CacheKeys, CacheTTL } from '../../db/optimizations/caching-strategy';
 
 export const userRouter = router({
   /**
-   * Get current user profile
+   * Get current user profile (with Redis caching)
    */
   getProfile: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.db.query.users.findFirst({
-      where: eq(users.id, ctx.user.userId),
-    });
+    return cacheAside(
+      CacheKeys.userProfile(ctx.user.userId),
+      async () => {
+        const user = await ctx.db.query.users.findFirst({
+          where: eq(users.id, ctx.user.userId),
+        });
 
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
-      });
-    }
+        if (!user) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'User not found',
+          });
+        }
 
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      image: user.image,
-      emailVerified: user.emailVerified,
-      bio: user.bio,
-      phone: user.phone,
-      country: user.country,
-      language: user.language,
-      jobTitle: user.jobTitle,
-      company: user.company,
-      location: user.location,
-      website: user.website,
-      skype: user.skype,
-      bannerImage: user.bannerImage,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          emailVerified: user.emailVerified,
+          bio: user.bio,
+          phone: user.phone,
+          country: user.country,
+          language: user.language,
+          jobTitle: user.jobTitle,
+          company: user.company,
+          location: user.location,
+          website: user.website,
+          skype: user.skype,
+          bannerImage: user.bannerImage,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        };
+      },
+      CacheTTL.user
+    );
   }),
 
   /**
@@ -70,6 +77,9 @@ export const userRouter = router({
         })
         .where(eq(users.id, ctx.user.userId))
         .returning();
+
+      // Invalidate user cache after update
+      await invalidateRelatedCache('user', ctx.user.userId);
 
       return {
         success: true,

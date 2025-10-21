@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { stories, users } from '../../db/schema/index';
 import { eq, and, desc } from 'drizzle-orm';
+import { cacheAside, invalidateRelatedCache, CacheKeys, CacheTTL } from '../../db/optimizations/caching-strategy';
 
 const storySchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -85,35 +86,41 @@ export const storiesRouter = router({
     }),
 
   /**
-   * Get single story by ID
+   * Get single story by ID (with Redis caching)
    * NOTE: Only returns personal stories (scope='personal')
    */
   getById: protectedProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ ctx, input }) => {
-    const [story] = await ctx.db
-      .select()
-      .from(stories)
-      .where(and(eq(stories.id, input.id), eq(stories.scope, 'personal')));
+    return cacheAside(
+      CacheKeys.story(input.id),
+      async () => {
+        const [story] = await ctx.db
+          .select()
+          .from(stories)
+          .where(and(eq(stories.id, input.id), eq(stories.scope, 'personal')));
 
-    if (!story) {
-      throw new Error('Story not found');
-    }
+        if (!story) {
+          throw new Error('Story not found');
+        }
 
-    // Check if user can view this story
-    if (!story.isPublished && story.authorId !== ctx.user.userId) {
-      throw new Error('You do not have permission to view this story');
-    }
+        // Check if user can view this story
+        if (!story.isPublished && story.authorId !== ctx.user.userId) {
+          throw new Error('You do not have permission to view this story');
+        }
 
-    return {
-      id: story.id,
-      authorId: story.authorId,
-      title: story.title,
-      content: story.content,
-      slug: story.slug,
-      isPublished: story.isPublished,
-      publishedAt: story.publishedAt,
-      createdAt: story.createdAt,
-      updatedAt: story.updatedAt,
-    };
+        return {
+          id: story.id,
+          authorId: story.authorId,
+          title: story.title,
+          content: story.content,
+          slug: story.slug,
+          isPublished: story.isPublished,
+          publishedAt: story.publishedAt,
+          createdAt: story.createdAt,
+          updatedAt: story.updatedAt,
+        };
+      },
+      CacheTTL.story
+    );
   }),
 
   /**
@@ -200,6 +207,9 @@ export const storiesRouter = router({
         )
         .returning();
 
+      // Invalidate story cache after update
+      await invalidateRelatedCache('story', input.id);
+
       return {
         id: updatedStory.id,
         authorId: updatedStory.authorId,
@@ -233,6 +243,9 @@ export const storiesRouter = router({
     await ctx.db
       .delete(stories)
       .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal')));
+
+    // Invalidate story cache after deletion
+    await invalidateRelatedCache('story', input.id);
 
     return { success: true, id: input.id };
   }),
