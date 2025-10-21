@@ -57,6 +57,9 @@ export const CacheKeys = {
   userCalendar: (userId: string, month: string) => `calendar:user:${userId}:${month}`,
   teamCalendar: (teamId: string, month: string) => `calendar:team:${teamId}:${month}`,
 
+  // Notification related
+  notificationCount: (userId: string) => `user:${userId}:notification_count`,
+
   // Session related
   session: (token: string) => `session:${token}`,
   userSessions: (userId: string) => `user:${userId}:sessions`,
@@ -188,6 +191,9 @@ export async function invalidateRelatedCache(type: string, id: string): Promise<
       CacheKeys.teamMembers(id),
       CacheKeys.teamMemberCount(id),
       `team:${id}:*`,
+    ],
+    notification: [
+      CacheKeys.notificationCount(id), // user's notification count
     ],
   };
 
