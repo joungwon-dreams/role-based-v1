@@ -16,6 +16,7 @@ import { teamsRouter } from './team/teams.router';
 import { teamCalendarRouter } from './team/calendar.router';
 import { teamStoriesRouter } from './team/stories.router';
 import { teamChannelsRouter } from './team/channels.router';
+import { monitoringRouter } from './admin/monitoring.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -37,6 +38,10 @@ export const appRouter = router({
     calendar: teamCalendarRouter,
     stories: teamStoriesRouter,
     channels: teamChannelsRouter,
+  }),
+  // Admin namespace - monitoring and system management (TIER 2)
+  admin: router({
+    monitoring: monitoringRouter,
   }),
 });
 

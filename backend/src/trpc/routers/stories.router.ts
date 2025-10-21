@@ -8,7 +8,13 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { stories, users } from '../../db/schema/index';
 import { eq, and, desc, gt, lt } from 'drizzle-orm';
-import { cacheAside, invalidateRelatedCache, CacheKeys, CacheTTL } from '../../db/optimizations/caching-strategy';
+import {
+  cacheAside,
+  invalidateRelatedCache,
+  invalidateRelatedCacheGranular,
+  CacheKeys,
+  CacheTTL,
+} from '../../db/optimizations/caching-strategy';
 
 const storySchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -258,8 +264,10 @@ export const storiesRouter = router({
         )
         .returning();
 
-      // Invalidate story cache after update
-      await invalidateRelatedCache('story', input.id);
+      // Granular cache invalidation - only author's stories (TIER 2)
+      await invalidateRelatedCacheGranular('story', input.id, {
+        userId: ctx.user.userId,
+      });
 
       return {
         id: updatedStory.id,
@@ -295,8 +303,10 @@ export const storiesRouter = router({
       .delete(stories)
       .where(and(eq(stories.id, input.id), eq(stories.authorId, ctx.user.userId), eq(stories.scope, 'personal')));
 
-    // Invalidate story cache after deletion
-    await invalidateRelatedCache('story', input.id);
+    // Granular cache invalidation - only author's stories (TIER 2)
+    await invalidateRelatedCacheGranular('story', input.id, {
+      userId: ctx.user.userId,
+    });
 
     return { success: true, id: input.id };
   }),

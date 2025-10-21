@@ -11,6 +11,8 @@
  */
 
 import { Redis } from 'ioredis';
+import { count, and, eq } from 'drizzle-orm';
+import { notifications } from '../schema/index';
 
 // Redis 클라이언트 설정
 export const redis = new Redis({
@@ -167,6 +169,7 @@ export async function invalidateCache(pattern: string): Promise<void> {
 /**
  * Multi-level Cache Invalidation
  * 관련된 모든 캐시 무효화
+ * @deprecated Use invalidateRelatedCacheGranular for better performance
  */
 export async function invalidateRelatedCache(type: string, id: string): Promise<void> {
   const patterns: Record<string, string[]> = {
@@ -203,6 +206,139 @@ export async function invalidateRelatedCache(type: string, id: string): Promise<
   }
 }
 
+/**
+ * Granular Cache Invalidation (TIER 2)
+ * 정확히 필요한 캐시만 무효화하여 성능 최적화
+ *
+ * @param type - 리소스 타입 (story, comment, user, team, notification)
+ * @param id - 리소스 ID
+ * @param context - 추가 컨텍스트 (userId, teamId, storyId 등)
+ */
+export async function invalidateRelatedCacheGranular(
+  type: string,
+  id: string,
+  context?: {
+    userId?: string;
+    teamId?: string;
+    storyId?: string;
+    page?: number;
+  }
+): Promise<void> {
+  const keysToDelete: string[] = [];
+
+  switch (type) {
+    case 'story':
+      // Story 자체
+      keysToDelete.push(CacheKeys.story(id));
+      keysToDelete.push(`story:${id}:*`); // like_count, comment_count
+
+      // 특정 유저의 스토리 리스트만 무효화
+      if (context?.userId) {
+        keysToDelete.push(`user:${context.userId}:stories:*`);
+      }
+
+      // 특정 팀의 스토리 리스트만 무효화
+      if (context?.teamId) {
+        keysToDelete.push(`team:${context.teamId}:stories:*`);
+      }
+      break;
+
+    case 'comment':
+      // 특정 스토리의 댓글만 무효화
+      if (context?.storyId) {
+        keysToDelete.push(`story:${context.storyId}:comments:*`);
+      }
+      keysToDelete.push(`comment:${id}:*`); // 댓글의 답글들
+      break;
+
+    case 'user':
+      keysToDelete.push(CacheKeys.user(id));
+      keysToDelete.push(CacheKeys.userProfile(id));
+      keysToDelete.push(CacheKeys.userRoles(id));
+      keysToDelete.push(CacheKeys.userPermissions(id));
+      break;
+
+    case 'team':
+      keysToDelete.push(CacheKeys.team(id));
+      keysToDelete.push(CacheKeys.teamMembers(id));
+      keysToDelete.push(CacheKeys.teamMemberCount(id));
+      keysToDelete.push(`team:${id}:*`);
+
+      // 팀 멤버들의 userTeams 캐시도 무효화
+      if (context?.userId) {
+        keysToDelete.push(CacheKeys.userTeams(context.userId));
+      }
+      break;
+
+    case 'notification':
+      keysToDelete.push(CacheKeys.notificationCount(id)); // userId
+      break;
+
+    case 'calendar':
+      if (context?.userId) {
+        keysToDelete.push(`calendar:user:${context.userId}:*`);
+      }
+      if (context?.teamId) {
+        keysToDelete.push(`calendar:team:${context.teamId}:*`);
+      }
+      break;
+
+    default:
+      console.warn(`Unknown invalidation type: ${type}`);
+  }
+
+  // 모든 키 삭제
+  for (const key of keysToDelete) {
+    await invalidateCache(key);
+  }
+}
+
+// ============================================================================
+// TRANSACTION HELPERS (TIER 2)
+// ============================================================================
+
+/**
+ * Execute a function within a database transaction with automatic cache invalidation
+ * 트랜잭션 내에서 함수 실행 + 자동 캐시 무효화
+ *
+ * @param db - Drizzle database instance
+ * @param fn - Transaction function
+ * @param cacheInvalidations - Cache keys to invalidate after successful transaction
+ */
+export async function withTransaction<T>(
+  db: any,
+  fn: (tx: any) => Promise<T>,
+  cacheInvalidations?: Array<{
+    type: string;
+    id: string;
+    context?: {
+      userId?: string;
+      teamId?: string;
+      storyId?: string;
+    };
+  }>
+): Promise<T> {
+  try {
+    // Execute transaction
+    const result = await db.transaction(async (tx: any) => {
+      return await fn(tx);
+    });
+
+    // Only invalidate cache if transaction succeeds
+    if (cacheInvalidations) {
+      for (const invalidation of cacheInvalidations) {
+        await invalidateRelatedCacheGranular(invalidation.type, invalidation.id, invalidation.context);
+      }
+    }
+
+    return result;
+  } catch (error) {
+    // Don't invalidate cache if transaction fails
+    console.error('Transaction failed:', error);
+    throw error;
+  }
+}
+
 // ============================================================================
 // CACHE WARMING (캐시 예열)
 // ============================================================================
@@ -236,6 +372,73 @@ export async function warmupCache(db: any) {
     console.log('Cache warmup completed');
   } catch (error) {
     console.error('Cache warmup error:', error);
+  }
+}
+
+/**
+ * User-specific cache warming on login (TIER 2)
+ * 로그인 시 사용자별 자주 사용하는 데이터 미리 캐싱
+ *
+ * @param db - Database instance
+ * @param userId - User ID to warm cache for
+ */
+export async function warmupUserCache(db: any, userId: string): Promise<void> {
+  console.log(`Warming cache for user: ${userId}`);
+
+  try {
+    // 백그라운드에서 비동기로 실행 (로그인 속도에 영향 없도록)
+    Promise.all([
+      // 1. 사용자 프로필 캐싱
+      cacheAside(
+        CacheKeys.userProfile(userId),
+        async () => {
+          const user = await db.query.users.findFirst({
+            where: (users: any, { eq }: any) => eq(users.id, userId),
+          });
+          return user;
+        },
+        CacheTTL.user
+      ),
+
+      // 2. 알림 카운트 캐싱
+      cacheAside(
+        CacheKeys.notificationCount(userId),
+        async () => {
+          const result = await db
+            .select({ count: count() })
+            .from(notifications)
+            .where(
+              and(
+                eq(notifications.userId, userId),
+                eq(notifications.isRead, false),
+                eq(notifications.isArchived, false)
+              )
+            );
+          return result[0]?.count || 0;
+        },
+        CacheTTL.MEDIUM
+      ),
+
+      // 3. 사용자가 속한 팀 리스트 캐싱
+      cacheAside(
+        CacheKeys.userTeams(userId),
+        async () => {
+          const teams = await db.query.teamMembers.findMany({
+            where: (teamMembers: any, { eq }: any) => eq(teamMembers.userId, userId),
+            with: {
+              team: true,
+            },
+          });
+          return teams;
+        },
+        CacheTTL.LONG
+      ),
+    ]);
+
+    console.log(`Cache warmup completed for user: ${userId}`);
+  } catch (error) {
+    // 캐시 워밍 실패해도 로그인은 성공하도록
+    console.error('User cache warmup error:', error);
   }
 }
 

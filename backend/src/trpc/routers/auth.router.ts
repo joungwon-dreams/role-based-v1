@@ -6,6 +6,7 @@ import { generateAccessToken, generateRefreshToken, verifyToken } from '../../ut
 import { loginRateLimiter, signupRateLimiter } from '../../utils/rate-limiter';
 import { createSession, updateSessionActivity, invalidateSession, getClientIp, getUserAgent } from '../../utils/session';
 import { generateCsrfToken } from '../../utils/csrf';
+import { warmupUserCache } from '../../db/optimizations/caching-strategy';
 import { TRPCError } from '@trpc/server';
 import { eq, and, inArray } from 'drizzle-orm';
 
@@ -280,6 +281,11 @@ export const authRouter = router({
         sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // lax for dev cross-origin
         maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
         path: '/',
+      });
+
+      // Warm up cache for logged-in user (TIER 2 - runs in background)
+      warmupUserCache(ctx.db, user.id).catch((err) => {
+        console.error('Background cache warmup failed:', err);
       });
 
       return {
